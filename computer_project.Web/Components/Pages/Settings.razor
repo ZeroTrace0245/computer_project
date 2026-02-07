@@ -1,0 +1,148 @@
+@page "/settings"
+@using computer_project.Web.Models
+@using computer_project.Web.Services
+@inject SmartBiteApiClient ApiClient
+@inject UserSession Session
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Settings</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h1 class="mb-4">Settings</h1>
+
+        <!-- Account Section -->
+        <div class="mb-5">
+            <h5 class="fw-bold mb-3"><i class="bi bi-person me-2 text-primary"></i> Account Profile</h5>
+            <div class="card border-0">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                        <div>
+                            <div class="fw-bold">Username</div>
+                            <div class="text-muted small">Your unique identifier in SmartBite.</div>
+                        </div>
+                        <div class="fw-bold fs-5">@Session.CurrentUser?.Username</div>
+                    </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="fw-bold">Account Session</div>
+                            <div class="text-muted small">Sign out from your current device.</div>
+                        </div>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="HandleLogout">Sign Out</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Goals Section -->
+        <div class="mb-5">
+            <h5 class="fw-bold mb-3"><i class="bi bi-bullseye me-2 text-danger"></i> Nutrition Goals</h5>
+            @if (goal == null)
+            {
+                <div class="card border-0 p-4">Loading your goals...</div>
+            }
+            else
+            {
+                <div class="card border-0">
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Daily Calorie Target</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" @bind="goal.TargetCalories" />
+                                    <span class="input-group-text">kcal</span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Daily Water Target</label>
+                                <div class="input-group">
+                                    <input type="number" step="0.5" class="form-control" @bind="goal.TargetWater" />
+                                    <span class="input-group-text">Liters</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-end mt-4">
+                            <button class="btn btn-primary" @onclick="SaveGoals">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status"></span>
+                                }
+                                Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Preferences Section -->
+        <div class="mb-5">
+            <h5 class="fw-bold mb-3"><i class="bi bi-sliders me-2 text-success"></i> Application Preferences</h5>
+            <div class="card border-0">
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush rounded">
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                            <div>
+                                <div class="fw-bold">Dark Mode</div>
+                                <div class="text-muted small">Follow system appearance settings</div>
+                            </div>
+                            <div class="form-check form-switch fs-4">
+                                <input class="form-check-input" type="checkbox" role="switch">
+                            </div>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                            <div>
+                                <div class="fw-bold">Notifications</div>
+                                <div class="text-muted small">Get reminders to log water and meals</div>
+                            </div>
+                            <div class="form-check form-switch fs-4">
+                                <input class="form-check-input" type="checkbox" role="switch" checked>
+                            </div>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
+                            <div>
+                                <div class="fw-bold">Measurement Unit</div>
+                                <div class="text-muted small">Switch between Metric and Imperial</div>
+                            </div>
+                            <select class="form-select w-auto">
+                                <option>Metric (g, L)</option>
+                                <option>Imperial (oz, ml)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private UserGoal? goal;
+    private bool isSaving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        goal = await ApiClient.GetGoalAsync(1);
+    }
+
+    private async Task SaveGoals()
+    {
+        if (goal == null) return;
+        isSaving = true;
+        try
+        {
+            await ApiClient.UpdateGoalAsync(goal);
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void HandleLogout()
+    {
+        Session.Logout();
+        Navigation.NavigateTo("/");
+    }
+}

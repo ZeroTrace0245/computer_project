@@ -1,0 +1,67 @@
+﻿@inherits LayoutComponentBase
+@using computer_project.Web.Services
+@inject IJSRuntime JS
+@inject UserSession Session
+@implements IDisposable
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 border-bottom d-flex align-items-center" style="background-color: var(--win11-surface);">
+            <span class="fw-bold">SmartBite Health Tracker</span>
+            <div class="ms-auto d-flex align-items-center gap-3">
+                @if (Session.IsLoggedIn)
+                {
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.8rem;">
+                            @Session.CurrentUser?.Username[0].ToString().ToUpper()
+                        </div>
+                        <span class="small fw-semibold text-muted">@Session.CurrentUser?.Username</span>
+                    </div>
+                }
+
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-light border" @onclick="ToggleDarkMode" title="Toggle Theme">
+                        <i class="bi @(isDarkMode ? "bi-sun" : "bi-moon")"></i>
+                    </button>
+                    <a href="settings" class="btn btn-sm btn-light border" title="Settings">
+                        <i class="bi bi-gear"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <article class="content px-4 py-3">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    private bool isDarkMode = false;
+
+    protected override void OnInitialized()
+    {
+        Session.OnChange += StateHasChanged;
+    }
+
+    private async Task ToggleDarkMode()
+    {
+        isDarkMode = !isDarkMode;
+        await JS.InvokeVoidAsync("setTheme", isDarkMode ? "dark" : "light");
+    }
+
+    public void Dispose()
+    {
+        Session.OnChange -= StateHasChanged;
+    }
+}
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>

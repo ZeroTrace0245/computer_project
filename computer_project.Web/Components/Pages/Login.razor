@@ -1,0 +1,91 @@
+@page "/login"
+@using computer_project.Web.Models
+@using computer_project.Web.Services
+@inject SmartBiteApiClient ApiClient
+@inject NavigationManager Navigation
+@inject UserSession Session
+@rendermode InteractiveServer
+
+<PageTitle>Sign In - SmartBite</PageTitle>
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card border-0 shadow-lg">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold">Welcome Back</h2>
+                    <p class="text-muted">Sign in to your account</p>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold">Username</label>
+                    <input class="form-control" @bind="username" placeholder="Enter your username" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label small fw-bold">Password</label>
+                    <input type="password" class="form-control" @bind="password" placeholder="Enter your password" />
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="alert alert-danger py-2 small">@errorMessage</div>
+                }
+
+                <button class="btn btn-primary w-100 py-2 fw-bold" @onclick="HandleLogin" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    Sign In
+                </button>
+
+                <div class="text-center mt-4">
+                    <span class="text-muted small">Don't have an account?</span>
+                    <a href="register" class="small fw-bold ms-1">Create one</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string username = "";
+    private string password = "";
+    private string? errorMessage;
+    private bool isSubmitting = false;
+
+    private async Task HandleLogin()
+    {
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMessage = "Please fill in all fields.";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var user = await ApiClient.LoginAsync(username, password);
+            if (user != null)
+            {
+                Session.Login(user);
+                Navigation.NavigateTo("/dashboard");
+            }
+            else
+            {
+                errorMessage = "Invalid username or password.";
+            }
+        }
+        catch (Exception)
+        {
+            errorMessage = "An error occurred. Please try again.";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

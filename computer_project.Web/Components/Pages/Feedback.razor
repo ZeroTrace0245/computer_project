@@ -1,0 +1,63 @@
+@page "/feedback"
+@rendermode InteractiveServer
+
+<PageTitle>Feedback</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <h1 class="mb-4">Send Feedback</h1>
+        
+        <div class="card border-0">
+            <div class="card-body p-4">
+                <p class="text-muted">We'd love to hear your thoughts on SmartBite. Your feedback helping us improve the experience for everyone.</p>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">How would you rate your experience?</label>
+                    <div class="d-flex gap-3 text-2xl">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            int rating = i;
+                            <button class="btn btn-outline-secondary @(currentRating >= rating ? "btn-primary text-white" : "")" 
+                                    @onclick="() => currentRating = rating">
+                                <i class="bi bi-star-fill"></i> @rating
+                            </button>
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-3 mt-4">
+                    <label class="form-label fw-bold">What can we improve?</label>
+                    <textarea class="form-control" rows="5" @bind="feedbackText" placeholder="Share your suggestions, bug reports, or feature requests..."></textarea>
+                </div>
+
+                @if (submitted)
+                {
+                    <div class="alert alert-success d-flex align-items-center" role="alert">
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        <div>Thank you for your feedback! It has been shared with our team.</div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-end">
+                        <button class="btn btn-primary px-5" @onclick="SubmitFeedback" disabled="@(string.IsNullOrWhiteSpace(feedbackText))">
+                            Submit Feedback
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int currentRating = 0;
+    private string feedbackText = "";
+    private bool submitted = false;
+
+    private void SubmitFeedback()
+    {
+        // Mock submission
+        submitted = true;
+    }
+}

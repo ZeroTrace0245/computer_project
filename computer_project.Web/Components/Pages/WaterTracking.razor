@@ -1,0 +1,97 @@
+@page "/water"
+@using computer_project.Web.Models
+@inject SmartBiteApiClient ApiClient
+@rendermode InteractiveServer
+
+<PageTitle>Water Tracking</PageTitle>
+
+<h1>Water Tracking</h1>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <h5 class="card-title">Daily Intake</h5>
+                <p class="display-3">@totalWater.ToString("F1") L</p>
+                <div class="progress mb-3" style="height: 25px;">
+                    <div class="progress-bar" role="progressbar" 
+                         style="width: @(progressPercent)%;" 
+                         aria-valuenow="@progressPercent" aria-valuemin="0" aria-valuemax="100">
+                        @progressPercent.ToString("F0")%
+                    </div>
+                </div>
+                <p class="text-muted">Goal: @(goal?.TargetWater ?? 2.5) L</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Log Water</h5>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary" @onclick="() => QuickAdd(0.25)">+250ml</button>
+                    <button class="btn btn-outline-primary" @onclick="() => QuickAdd(0.5)">+500ml</button>
+                    <button class="btn btn-outline-primary" @onclick="() => QuickAdd(0.75)">+750ml</button>
+                    <button class="btn btn-primary ms-auto" @onclick="() => QuickAdd(customAmount)">Add Custom</button>
+                    <input type="number" step="0.1" class="form-control w-25" @bind="customAmount" />
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (intakes == null)
+{
+    <p><em>Loading entries...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Amount (L)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in intakes)
+            {
+                <tr>
+                    <td>@entry.LoggedAt.ToShortTimeString()</td>
+                    <td>@entry.Amount.ToString("F2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<WaterIntake>? intakes;
+    private UserGoal? goal;
+    private double totalWater => intakes?.Where(i => i.LoggedAt.Date == DateTime.UtcNow.Date).Sum(i => i.Amount) ?? 0;
+    private double progressPercent => Math.Min(100, (totalWater / (goal?.TargetWater ?? 2.5)) * 100);
+    private double customAmount = 0.25;
+
+    protected override async Task OnInitializedAsync()
+    {
+        goal = await ApiClient.GetGoalAsync(1);
+        await LoadIntakes();
+    }
+
+    private async Task LoadIntakes()
+    {
+        intakes = await ApiClient.GetWaterIntakesAsync();
+    }
+
+    private async Task QuickAdd(double amount)
+    {
+        var intake = new WaterIntake
+        {
+            UserId = 1,
+            Amount = amount,
+            LoggedAt = DateTime.UtcNow
+        };
+        await ApiClient.AddWaterIntakeAsync(intake);
+        await LoadIntakes();
+    }
+}

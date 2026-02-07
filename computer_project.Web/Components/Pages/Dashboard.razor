@@ -1,0 +1,215 @@
+@page "/dashboard"
+@using computer_project.Web.Models
+@inject SmartBiteApiClient ApiClient
+@rendermode InteractiveServer
+
+<PageTitle>Dashboard</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">SmartBite Insights</h1>
+    <div class="text-muted small">Updated @DateTime.Now.ToShortTimeString()</div>
+</div>
+
+@if (report == null || goal == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status"></div>
+        <p class="mt-2">Analyzing your nutrition data...</p>
+    </div>
+}
+else
+{
+    <div class="row g-4 mb-4">
+        <!-- Summary Cards -->
+        <div class="col-md-3">
+            <div class="card border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-fire text-danger me-2"></i>
+                        <span class="text-muted small fw-bold text-uppercase">Calories</span>
+                    </div>
+                    <div class="h3 fw-bold">@report.TotalCalories.ToString("F0")</div>
+                    <div class="progress mt-3" style="height: 6px;">
+                        <div class="progress-bar bg-danger" style="width: @(GetPercent(report.TotalCalories, goal.TargetCalories))%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1 small text-muted">
+                        <span>@(goal.TargetCalories - report.TotalCalories > 0 ? $"{(goal.TargetCalories - report.TotalCalories):F0} remaining" : "Goal reached")</span>
+                        <span>@goal.TargetCalories.ToString("F0") kcal</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-water text-primary me-2"></i>
+                        <span class="text-muted small fw-bold text-uppercase">Water</span>
+                    </div>
+                    <div class="h3 fw-bold">@totalWater.ToString("F1") L</div>
+                    <div class="progress mt-3" style="height: 6px;">
+                        <div class="progress-bar bg-primary" style="width: @(GetPercent(totalWater, goal.TargetWater))%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-1 small text-muted">
+                        <span>@GetPercent(totalWater, goal.TargetWater).ToString("F0")% of daily goal</span>
+                        <span>@goal.TargetWater.ToString("F1") L</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-lightning-fill text-success me-2"></i>
+                        <span class="text-muted small fw-bold text-uppercase">Meals Logged</span>
+                    </div>
+                    <div class="h3 fw-bold">@report.MealCount</div>
+                    <p class="text-muted small mb-0 mt-3">Log at least 3 meals a day for accuracy.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card border-primary bg-primary text-white">
+                <div class="card-body">
+                    <div class="small fw-bold text-uppercase opacity-75 mb-2">Health Score</div>
+                    <div class="h3 fw-bold mb-0">84/100</div>
+                    <p class="small mt-2 mb-0">Great job! You are 12% above average this week.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Weekly Chart -->
+        <div class="col-lg-8">
+            <div class="card border-0 h-100">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold mb-4">Calorie Intake (Last 7 Days)</h5>
+                    <div class="chart-bar-container">
+                        @foreach (var day in lastWeekData)
+                        {
+                            <div class="chart-bar" style="height: @(day.Percent)%; background-color: @(day.IsToday ? "var(--win11-accent)" : "#d1d1d1")" 
+                                 title="@($"{day.Label}: {day.Value} kcal")">
+                            </div>
+                        }
+                    </div>
+                    <div class="d-flex justify-content-between mt-2 px-1">
+                        @foreach (var day in lastWeekData)
+                        {
+                            <span class="text-muted small" style="width: 40px; text-align: center;">@day.Label</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Macro Breakdown -->
+        <div class="col-lg-4">
+            <div class="card border-0 h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title fw-bold mb-4 text-start">Macro Distribution</h5>
+                    
+                    <svg width="200" height="200" viewBox="0 0 42 42" class="chart-pie-svg mb-3">
+                        <circle class="hole" cx="21" cy="21" r="15.91549430918954" fill="#fff"></circle>
+                        <circle class="ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#d2d3d4" stroke-width="3"></circle>
+                        
+                        @{
+                            double proteinPct = GetMacroPct(report.Protein, report.Carbs, report.Fat, "protein");
+                            double carbsPct = GetMacroPct(report.Protein, report.Carbs, report.Fat, "carbs");
+                            double fatPct = GetMacroPct(report.Protein, report.Carbs, report.Fat, "fat");
+                        }
+
+                        <circle class="segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#198754" stroke-width="3" 
+                                stroke-dasharray="@($"{proteinPct} {100-proteinPct}")" stroke-dashoffset="25"></circle>
+                        
+                        <circle class="segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ffc107" stroke-width="3" 
+                                stroke-dasharray="@($"{carbsPct} {100-carbsPct}")" stroke-dashoffset="@(25 - proteinPct)"></circle>
+
+                        <circle class="segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#dc3545" stroke-width="3" 
+                                stroke-dasharray="@($"{fatPct} {100-fatPct}")" stroke-dashoffset="@(25 - proteinPct - carbsPct)"></circle>
+                    </svg>
+
+                    <div class="d-flex flex-column gap-2 text-start mt-2">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-circle-fill text-success small me-1"></i> Protein</span>
+                            <span class="fw-bold">@report.Protein.ToString("F0")g</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-circle-fill text-warning small me-1"></i> Carbs</span>
+                            <span class="fw-bold">@report.Carbs.ToString("F0")g</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-circle-fill text-danger small me-1"></i> Fat</span>
+                            <span class="fw-bold">@report.Fat.ToString("F0")g</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private HealthReport? report;
+    private UserGoal? goal;
+    private double totalWater;
+
+    private List<ChartData> lastWeekData = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        report = await ApiClient.GetReportAsync();
+        goal = await ApiClient.GetGoalAsync(1);
+        
+        var waterLogs = await ApiClient.GetWaterIntakesAsync();
+        totalWater = waterLogs.Where(i => i.LoggedAt.Date == DateTime.UtcNow.Date).Sum(i => i.Amount);
+
+        // Mock data for weekly chart
+        lastWeekData = new List<ChartData>
+        {
+            new("Mon", 1800, 2000),
+            new("Tue", 2100, 2000),
+            new("Wed", 1950, 2000),
+            new("Thu", 1700, 2000),
+            new("Fri", 2300, 2000),
+            new("Sat", 2500, 2000),
+            new("Today", (int)report.TotalCalories, (int)(goal?.TargetCalories ?? 2000), true)
+        };
+    }
+
+    private double GetPercent(double val, double target) => target > 0 ? Math.Min(100, (val / target) * 100) : 0;
+
+    private double GetMacroPct(double p, double c, double f, string type)
+    {
+        double total = p + c + f;
+        if (total == 0) return 33.3; // Default split if no data
+        return type switch
+        {
+            "protein" => (p / total) * 100,
+            "carbs" => (c / total) * 100,
+            "fat" => (f / total) * 100,
+            _ => 0
+        };
+    }
+
+    private class ChartData
+    {
+        public string Label { get; }
+        public int Value { get; }
+        public double Percent { get; }
+        public bool IsToday { get; }
+
+        public ChartData(string label, int val, int target, bool isToday = false)
+        {
+            Label = label;
+            Value = val;
+            Percent = Math.Min(100, (val / (double)target) * 100);
+            IsToday = isToday;
+        }
+    }
+}
+

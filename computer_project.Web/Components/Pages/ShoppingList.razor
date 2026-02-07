@@ -1,0 +1,91 @@
+@page "/shoppinglist"
+@using computer_project.Web.Models
+@inject SmartBiteApiClient ApiClient
+@rendermode InteractiveServer
+
+<PageTitle>Shopping List</PageTitle>
+
+<h1>Shopping List</h1>
+
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex gap-2">
+                    <input class="form-control" @bind="newItemName" placeholder="What do you need to buy?" />
+                    <button class="btn btn-primary" @onclick="AddItem">Add</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body p-0">
+                @if (items == null)
+                {
+                    <div class="p-4 text-center">
+                        <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                        <span class="ms-2">Loading items...</span>
+                    </div>
+                }
+                else if (!items.Any())
+                {
+                    <div class="p-4 text-center text-muted">No items in your list.</div>
+                }
+                else
+                {
+                    <div class="list-group list-group-flush rounded-bottom">
+                        @foreach (var item in items)
+                        {
+                            <div class="list-group-item d-flex align-items-center border-0 py-3 px-4">
+                                <div class="form-check m-0">
+                                    <input class="form-check-input" type="checkbox" checked="@item.IsPurchased" @onchange="@(e => TogglePurchased(item))" id="@($"item-{item.Id}")" />
+                                    <label class="form-check-label ms-2 @(item.IsPurchased ? "text-decoration-line-through text-muted" : "")" for="@($"item-{item.Id}")">
+                                        @item.ItemName
+                                    </label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+private List<ShoppingListItem>? items;
+private string newItemName = "";
+
+protected override async Task OnInitializedAsync()
+{
+    await LoadItems();
+}
+
+private async Task LoadItems()
+{
+    items = await ApiClient.GetShoppingListAsync();
+}
+
+    private async Task AddItem()
+    {
+        if (string.IsNullOrWhiteSpace(newItemName)) return;
+
+        var item = new ShoppingListItem
+        {
+            ItemName = newItemName,
+            IsPurchased = false,
+            UserId = 1
+        };
+
+        await ApiClient.AddShoppingListItemAsync(item);
+        newItemName = "";
+        await LoadItems();
+    }
+
+    private async Task TogglePurchased(ShoppingListItem item)
+    {
+        item.IsPurchased = !item.IsPurchased;
+        await ApiClient.UpdateShoppingListItemAsync(item);
+        await LoadItems();
+    }
+}

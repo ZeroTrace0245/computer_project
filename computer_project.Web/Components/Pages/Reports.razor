@@ -1,0 +1,59 @@
+@page "/reports"
+@using computer_project.Web.Models
+@inject SmartBiteApiClient ApiClient
+@rendermode InteractiveServer
+
+<PageTitle>Health Reports</PageTitle>
+
+<h1>Health Reports</h1>
+
+<p>Analyze your progress and export your health data.</p>
+
+<div class="alert alert-info">
+    <strong>Alpha Feature:</strong> Reports are currently generated based on your login history and nutrition intake.
+</div>
+
+@if (report == null)
+{
+    <p><em>Generating reports...</em></p>
+}
+else
+{
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Daily Nutritional Summary - @report.GeneratedAt.ToShortDateString()</h5>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col">
+                    <h6>Calories</h6>
+                    <p class="h4">@report.TotalCalories</p>
+                </div>
+                <div class="col">
+                    <h6>Protein</h6>
+                    <p class="h4">@report.Protein g</p>
+                </div>
+                <div class="col">
+                    <h6>Carbs</h6>
+                    <p class="h4">@report.Carbs g</p>
+                </div>
+                <div class="col">
+                    <h6>Fat</h6>
+                    <p class="h4">@report.Fat g</p>
+                </div>
+            </div>
+            <hr />
+            <p><strong>Status:</strong> Based on @report.MealCount meals logged today.</p>
+        </div>
+    </div>
+}
+
+@code {
+    private HealthReport? report;
+
+    protected override async Task OnInitializedAsync()
+    {
+        report = await ApiClient.GetReportAsync();
+    }
+}
+

@@ -1,0 +1,124 @@
+@page "/meals"
+@using computer_project.Web.Models
+@inject SmartBiteApiClient ApiClient
+@rendermode InteractiveServer
+
+<PageTitle>Meal Logging</PageTitle>
+
+<h1>Meal History</h1>
+
+<div class="card mb-4">
+    <div class="card-body p-4">
+        <h5 class="mb-3">Log New Meal</h5>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Meal Name</label>
+                <input class="form-control" @bind="newMealName" placeholder="e.g. Chicken Salad" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Calories</label>
+                <input type="number" class="form-control" @bind="newMealCalories" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Protein (g)</label>
+                <input type="number" class="form-control" @bind="newProtein" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Carbs (g)</label>
+                <input type="number" class="form-control" @bind="newCarbs" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Fat (g)</label>
+                <input type="number" class="form-control" @bind="newFat" />
+            </div>
+            <div class="col-12 text-end mt-4">
+                <button class="btn btn-primary px-4" @onclick="AddMeal">Log Meal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        @if (meals == null)
+        {
+            <div class="p-4 text-center">
+                <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                <span class="ms-2">Loading logs...</span>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="ps-4">Date</th>
+                            <th>Meal</th>
+                            <th>Calories</th>
+                            <th>Macros (P|C|F)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var meal in meals)
+                        {
+                            <tr>
+                                <td class="ps-4 text-muted small">@meal.LoggedAt.ToShortDateString()</td>
+                                <td class="fw-bold">@meal.Name</td>
+                                <td>@meal.Calories kcal</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">P: @meal.Protein g</span>
+                                    <span class="badge bg-light text-dark border">C: @meal.Carbs g</span>
+                                    <span class="badge bg-light text-dark border">F: @meal.Fat g</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+private List<Meal>? meals;
+private string newMealName = "";
+private double newMealCalories;
+private double newProtein;
+private double newCarbs;
+private double newFat;
+
+protected override async Task OnInitializedAsync()
+{
+    await LoadMeals();
+}
+
+private async Task LoadMeals()
+{
+    meals = await ApiClient.GetMealsAsync();
+}
+
+private async Task AddMeal()
+    {
+        if (string.IsNullOrWhiteSpace(newMealName)) return;
+
+        var meal = new Meal
+        {
+            Name = newMealName,
+            Calories = newMealCalories,
+            Protein = newProtein,
+            Carbs = newCarbs,
+            Fat = newFat,
+            LoggedAt = DateTime.UtcNow,
+            UserId = 1 
+        };
+
+        await ApiClient.AddMealAsync(meal);
+        newMealName = "";
+        newMealCalories = 0;
+        newProtein = 0;
+        newCarbs = 0;
+        newFat = 0;
+        await LoadMeals();
+    }
+}
