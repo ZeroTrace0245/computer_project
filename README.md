@@ -59,6 +59,9 @@ dotnet run --project (Path to the computer_projec.ApiService) (Ed-"G:\git\SmartB
 
 # Run UI with hot reload
 dotnet watch --project (Path to the computer_project.Web) (Eg-"G:\git\SmartBit\computer_project.Web")
+
+# To exit
+ctrl + C
 ```
 
 ## File structure (key paths)
