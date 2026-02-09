@@ -48,14 +48,14 @@ SmartBite is a Blazor-based health companion that combines meal logging, water t
 ## Quickstart
 ```bash
 # Clone
-git clone https://github.com/ZeroTrace0245/computer_project.git
-cd computer_project
+git clone https://github.com/ZeroTrace0245/SmartBit.git
+cd SmartBit
 
 # Restore
 dotnet restore
 
 # Run API (adjust URL/port as needed)
-dotnet run --project computer_project.ApiService
+dotnet run --project computer_projec.ApiService
 
 # Run UI with hot reload
 dotnet watch --project computer_project.Web
