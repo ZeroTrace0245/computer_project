@@ -4,9 +4,42 @@ Blazor app with a mica/acrylic theme. Frontend, backend API, and shared defaults
 
 > ⚠️ Requires .NET 10 SDK. Earlier SDKs are not supported.
 
+## Overview
+SmartBite is a Blazor-based health companion that combines meal logging, water tracking, and shopping list planning with role-aware access. End users track calories/macros, water intake, and groceries; admins manage settings and access control. A sticky, theme-aware UI (light/dark) and CSV exports help users monitor progress, while feedback hooks keep the loop open.
+
+## What the app does (features)
+- Role-aware UI: admin badge and admin-only access to Settings; consumers see end-user flows only.
+- Health reports: daily summaries (calories/macros) with CSV export.
+- Meal logging: add and view meals, macro totals, and recent entries.
+- Water tracking: log intakes and get advice.
+- Shopping list: add, edit payment method, mark purchased, and delete items; checkout tracker simulation.
+- Feedback/contact: capture user feedback with UI entry points (feedback button/link).
+- Navigation/theme: sticky header, collapsible sidebar, light/dark theme via `IJSRuntime`.
+
+### Feature details
+**Dashboard & reports**
+- Daily macro summary cards (calories, protein, carbs, fat) with tips.
+- Recent meals table and CSV export for personal data portability.
+- Encouraging header message and sticky top bar to keep context visible.
+
+**Groceries / Shopping list**
+- Add items with payment method tagging (cash, card, Apple/Google Pay).
+- Toggle purchased state, change payment, delete items inline.
+- Checkout tracker simulation with live status logs and progress checkpoints.
+- Search-aware filtering tied to session search query.
+
+**Water system**
+- Log water intakes and list recent entries.
+
+**Navigation & access control**
+- Role-aware rendering: admin badge, Settings page restricted to admins; consumers blocked from Settings.
+- Collapsible sidebar (mobile-friendly) and sticky header actions (quick actions).
+
+
 ## Prerequisites
 - .NET 10 SDK
 - Git
+
 
 ## Projects
 - `computer_project.Web` — Blazor UI, layout, routing, SmartBite API client.
@@ -74,6 +107,13 @@ computer_project.AppHost/         # Host/bootstrap
 | Backend | ASP.NET Core (`computer_project.ApiService`) | API + shared models. |
 | Hosting | .NET 10 | CLI-driven build/run. |
 
+## Tooling & services
+- .NET CLI (`dotnet restore`, `dotnet run`, `dotnet watch`)
+- Git + GitHub for source control
+- ASP.NET Core Minimal APIs (in-memory database for demo)
+- Bootstrap 5 for layout and components
+- JS interop via `IJSRuntime` for theme toggles and file download
+
 ## Screenshots & Demos
 | View | Path |
 | --- | --- |
@@ -112,3 +152,10 @@ erDiagram
 - Session/auth and role-aware UI (admin badge, quick actions)
 - Feedback form and SmartBite API client hardening
 - Role-based access: admin-only Settings page; consumers are blocked from Settings.
+
+## Future plans
+- Persist data with a real database provider and authentication/authorization store.
+- Add end-to-end tests for role-based routing and protected pages.
+- Enhance feedback flow with backend storage and notifications.
+- Expand reports with trends, charts, and export formats (PDF/Excel).
+- Improve offline/connection handling and reconnection UX.
