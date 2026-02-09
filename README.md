@@ -5,7 +5,7 @@ Blazor app with a mica/acrylic theme. Frontend, backend API, and shared defaults
 > ⚠️ Requires .NET 10 SDK. Earlier SDKs are not supported.
 
 ## Overview
-SmartBite is a Blazor-based health companion that combines meal logging, water tracking, and shopping list planning with role-aware access. End users track calories/macros, water intake, and groceries; admins manage settings and access control. A sticky, theme-aware UI (light/dark) and CSV exports help users monitor progress, while feedback hooks keep the loop open.
+SmartBite is a Blazor-based health companion that combines meal logging, water tracking, and shopping list planning with role-aware access. End users track calories/macros, water intake, and groceries; admins manage settings and access control. A sticky, theme aware UI and CSV exports help users monitor progress, while feedback hooks keep the loop open.
 
 ## What the app does (features)
 - Role-aware UI: admin badge and admin-only access to Settings; consumers see end-user flows only.
