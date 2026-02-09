@@ -74,7 +74,7 @@ computer_project.AppHost/         # Host/bootstrap
 | Backend | ASP.NET Core (`computer_project.ApiService`) | API + shared models. |
 | Hosting | .NET 10 | CLI-driven build/run. |
 
-## Screenshots (placeholders)
+## Screenshots & Demos
 | View | Path |
 | --- | --- |
 | Startup | ![Startup](https://github.com/ZeroTrace0245/computer_project/blob/a63f15c996b2e7d53140f1349c60286cf1d756f5/screenshots/Startup%20.png) |
@@ -92,7 +92,6 @@ computer_project.AppHost/         # Host/bootstrap
 | Role-based access (admin vs consumer) | ![Role-based](https://github.com/ZeroTrace0245/computer_project/blob/a63f15c996b2e7d53140f1349c60286cf1d756f5/screenshots/Admin%20logging%20warning%20consumers%20only.png) | 
 | Role-based access (admin vs consumer) | ![Role-based](https://github.com/ZeroTrace0245/computer_project/blob/a63f15c996b2e7d53140f1349c60286cf1d756f5/screenshots/Settings%20only%20for%20ADMINS.png) |
 
-_Add captures to `docs/screenshots/` matching the above filenames._
 
 ## ER diagram
 ```mermaid
