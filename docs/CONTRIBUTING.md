@@ -13,7 +13,7 @@ To install the .NET 10 SDK using Windows Package Manager (winget), run the follo
 
 ```bash
 winget install Microsoft.DotNet.SDK.10
-
+```
 
 1. Clone the repo and switch to a feature branch:
    ```bash
