@@ -1,7 +1,8 @@
 # Contributing to SmartBite
 
 > Contribution guide for the PUSL2021 Computing Group Project.
-> ⚠️ **Requires .NET 10 SDK.** Earlier SDK versions are not supported.
+
+>⚠️ **Requires .NET 10 SDK.** Earlier SDK versions are not supported.
 
 ---
 
@@ -17,15 +18,15 @@ winget install Microsoft.DotNet.SDK.10
 
 1. Clone the repo and switch to a feature branch:
    ```bash
-   git clone https://github.com/ZeroTrace0245/computer_project.git
-   cd computer_project
+   git clone https://github.com/ZeroTrace0245/SmartBit.git
+   cd SmartBit
    git checkout -b feature/<your-area>
    ```
 2. Restore and run:
    ```bash
    dotnet restore
-   dotnet run --project computer_project.ApiService
-   dotnet watch --project computer_project.Web
+   dotnet run --project (path to the computer_project.ApiService)
+   dotnet watch --project (path to the computer_project.Web)
    ```
 3. Make changes, test locally, commit with a clear message, and open a pull request.
 
