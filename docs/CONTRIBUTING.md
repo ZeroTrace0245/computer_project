@@ -274,16 +274,6 @@ dotnet ef database update --project computer_project.ApiService
 
 ---
 
-## Commit History
-
-| Hash | Message | Author | Date |
-| --- | --- | --- | --- |
-| a478bd8 | remove the API key | Zero_Trace | 2026-02-07 |
-| 38d6684 | Add project files. | Zero_Trace | 2026-02-07 |
-| 8eff6e6 | Add .gitattributes and .gitignore. | Zero_Trace | 2026-02-07 |
-
----
-
 ## Quick Reference
 
 | No. | Area | Primary Files | Owner |
