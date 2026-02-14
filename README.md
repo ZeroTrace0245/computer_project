@@ -219,6 +219,7 @@ erDiagram
 | Light/dark theme | ✅ Done | JS interop toggle, mica/acrylic effects |
 | Feedback page | ✅ Done | Contact/help entry point |
 | User registration/login | ✅ Done | Simple credential flow (demo, no hashing) |
+| AI Health Coach | ⚠️ In Progress | Chat-based nutrition advice via AI Foundry Local — runs entirely on-device, no API keys needed |
 
 ---
 
@@ -247,7 +248,7 @@ erDiagram
 | Challenge | Solution |
 | --- | --- |
 | Blazor Server loses connection on idle/network drop | Added reconnection error UI (`blazor-error-ui`) and user-facing reload prompt |
-| AI API key integration attempted but unsuccessful | Moved AI features (nutrition estimates, recommendations, chat) to future plans |
+| Cloud AI API key integration unsuccessful | Replaced Google Gemini with **AI Foundry Local** — runs the `phi-3.5-mini` model entirely on-device; still work in progress |
 | Role checks scattered across pages | Centralised in `UserSession` (`IsAdmin`, `IsEndUser`) and reusable `<ConsumerOnly>` wrapper component |
 | Theme not persisting across renders | `ApplyTheme` called via `OnAfterRenderAsync` on first render; JS interop sets `data-bs-theme` attribute |
 | First-run data setup | Seed data added in `Program.cs` so the SQLite database is pre-populated on first launch |
@@ -258,7 +259,7 @@ erDiagram
 - **No real authentication**: passwords stored in plain text; no token/cookie-based auth flow.
 - **Single-user demo**: most endpoints default to `UserId = 1`; no multi-user session isolation.
 - **No automated tests**: no unit or integration test projects in the solution.
-- **No AI features**: Google Gemini API key was configured but did not work; AI nutrition estimates and recommendations are not functional.
+- **AI features in progress**: AI Health Coach, nutrition estimation, and recommendations are being implemented via AI Foundry Local. The feature is functional but still under active development — expect rough edges.
 - **No offline support**: Blazor Server requires a live SignalR connection; no service worker or PWA fallback.
 
 ---
@@ -427,8 +428,47 @@ All tables satisfy 3NF: no non-key column transitively depends on the PK through
 
 ---
 
+## AI Features — Sneak Peek ⚠️
+
+> ⚠️ **Work in Progress** — AI features are under active development and may change significantly before release. Screenshots below show the current state of the implementation.
+
+> ⚠️ **AI Foundry Local must be installed** to use AI features. No cloud APIs or API keys are required — all AI processing runs entirely on your device.
+
+SmartBite uses [AI Foundry Local](https://github.com/microsoft/ai-foundry-local) to power:
+- **AI Health Coach** — chat-based nutrition advice, meal suggestions, and calorie estimates
+- **Meal nutrition estimation** — automatic macro breakdown from a meal description
+- **Personalised recommendations** — meal suggestions based on your recent logs and goals
+- **Health report summaries** — AI-generated daily health assessments
+- **Hydration tips** — motivational water intake advice
+
+### AI Coach — Preview (work in progress)
+
+![AI Coach — work in progress](https://github.com/ZeroTrace0245/SmartBit/blob/463fb9894e90f59122e7e0cd3c969c989e8f64fc/screenshots/AI%20(working%20on%20Prograess).png)
+
+### AI Foundry Local — Running Locally
+
+![AI Foundry Local running on device](https://github.com/ZeroTrace0245/SmartBit/blob/463fb9894e90f59122e7e0cd3c969c989e8f64fc/screenshots/Local%20Foundary.png)
+
+### Setup
+
+```bash
+# Install AI Foundry Local (one-time)
+winget install Microsoft.AIFoundryLocal
+
+# Download the model used by SmartBite
+foundry model download phi-3.5-mini
+
+# Start the local server (must be running before using AI features)
+foundry service start
+```
+
+The AI Coach page in SmartBite will show a live connection status indicator — green when Foundry is running, red when it's not.
+
+---
+
 ## Future Plans
-- **Google Gemini integration**: In a future release, the AI backend will be updated to support Google Gemini API as an alternative to AI Foundry Local, allowing cloud-based AI for users who prefer not to run models locally.
+- ⚠️ **AI features full release**: The AI Health Coach, nutrition estimation, and recommendation features are currently work in progress. A stable release is planned once testing and prompt tuning are complete.
+- ⚠️ **Google Gemini integration**: In a future release, the AI backend may be updated to support Google Gemini API as an alternative to AI Foundry Local, allowing cloud-based AI for users who prefer not to run models locally.
 - Migrate from SQLite to SQL Server or PostgreSQL for production-grade scalability.
 - Add ASP.NET Core Identity or token-based authentication with password hashing.
 - Implement multi-user session isolation (per-user data scoping).
@@ -441,4 +481,4 @@ All tables satisfy 3NF: no non-key column transitively depends on the PK through
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/ZeroTrace0245/SmartBit/blob/master/docs/CONTRIBUTING.md) for the ownership quick-reference table and contributor details.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the ownership quick-reference table and contributor details.
