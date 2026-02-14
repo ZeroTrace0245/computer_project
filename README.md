@@ -21,7 +21,7 @@ SmartBite helps end users track daily calories/macros, water intake, and groceri
 
 ### Technical Feasibility
 - Built on .NET 10 with Blazor Server — mature, well-documented stack with strong tooling (Visual Studio, dotnet CLI).
-- In-memory database (Entity Framework Core) for rapid prototyping; swappable to SQL Server/PostgreSQL without code changes.
+- SQLite database (`SmartBite.db`) via Entity Framework Core for lightweight persistent storage; swappable to SQL Server/PostgreSQL without code changes.
 - JS interop (`IJSRuntime`) handles theme persistence and file downloads where Blazor alone is insufficient.
 
 ### Economical Feasibility
@@ -146,7 +146,7 @@ erDiagram
 │  └────────────────┬──────────────────────────┘  │
 │                   │                             │
 │  ┌────────────────┴──────────────────────────┐  │
-│  │  EF Core (InMemory DB)                    │  │
+│  │  EF Core + SQLite (SmartBite.db)          │  │
 │  │  AppDbContext                             │  │
 │  └───────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────┘
@@ -176,7 +176,7 @@ erDiagram
 | --- | --- |
 | Bootstrap 5 | Responsive grid, buttons, cards, dropdowns |
 | Bootstrap Icons | Icon set (`bi bi-*`) used across the UI |
-| Entity Framework Core (InMemory) | ORM and data access for demo persistence |
+| Entity Framework Core + SQLite | ORM and persistent data access (`SmartBite.db`) |
 | .NET Aspire (`ServiceDefaults`) | Shared service wiring and defaults |
 
 ### Algorithms
@@ -201,11 +201,11 @@ erDiagram
    ```
 4. Run the API:
    ```bash
-   dotnet run --project ( Path to the computer_project.ApiService )
+   dotnet run --project computer_project.ApiService
    ```
 5. Run the UI with hot reload:
    ```bash
-   dotnet watch --project ( Path to the computer_project.Web )
+   dotnet watch --project computer_project.Web
    ```
 
 ### Implemented Features
@@ -216,7 +216,7 @@ erDiagram
 | Water tracking | ✅ Done | Log intakes, view history |
 | Shopping list | ✅ Done | Add/delete items, payment tagging, checkout tracker |
 | Role-based access | ✅ Done | Admin-only Settings; consumers blocked |
-| dark theme | ✅ Done | JS interop, mica/acrylic effects |
+| Light/dark theme | ✅ Done | JS interop toggle, mica/acrylic effects |
 | Feedback page | ✅ Done | Contact/help entry point |
 | User registration/login | ✅ Done | Simple credential flow (demo, no hashing) |
 
@@ -250,12 +250,11 @@ erDiagram
 | AI API key integration attempted but unsuccessful | Moved AI features (nutrition estimates, recommendations, chat) to future plans |
 | Role checks scattered across pages | Centralised in `UserSession` (`IsAdmin`, `IsEndUser`) and reusable `<ConsumerOnly>` wrapper component |
 | Theme not persisting across renders | `ApplyTheme` called via `OnAfterRenderAsync` on first render; JS interop sets `data-bs-theme` attribute |
-| In-memory DB resets on restart | Seed data added in `Program.cs` and `OnModelCreating` so the app is always usable after launch |
+| First-run data setup | Seed data added in `Program.cs` so the SQLite database is pre-populated on first launch |
 
 ---
 
 ## Current System Limitations
-- **No persistent storage**: data lives in an in-memory database and resets on every restart.
 - **No real authentication**: passwords stored in plain text; no token/cookie-based auth flow.
 - **Single-user demo**: most endpoints default to `UserId = 1`; no multi-user session isolation.
 - **No automated tests**: no unit or integration test projects in the solution.
@@ -307,9 +306,130 @@ computer_project.AppHost/          # Host / bootstrap
 
 ---
 
+## Database Design
+
+SmartBite uses **SQLite** (`SmartBite.db`) via `Microsoft.EntityFrameworkCore.Sqlite` v10.0.3. The schema is managed by EF Core through `AppDbContext` (7 DbSets). On first launch, `Program.cs` seeds demo data so the app is immediately usable.
+
+### SQL ER Diagram
+
+```mermaid
+erDiagram
+    User {
+        int Id PK
+        string Username
+        string PasswordHash
+        string Role
+    }
+    Meal {
+        int Id PK
+        int UserId FK
+        string Name
+        double Calories
+        double Protein
+        double Carbs
+        double Fat
+        datetime LoggedAt
+    }
+    WaterIntake {
+        int Id PK
+        int UserId FK
+        double Amount
+        datetime LoggedAt
+    }
+    ShoppingListItem {
+        int Id PK
+        int UserId FK
+        string ItemName
+        string Quantity
+        bool IsPurchased
+        string PaymentMethod
+    }
+    HealthReport {
+        int Id PK
+        int UserId FK
+        double TotalCalories
+        int MealCount
+        double Protein
+        double Carbs
+        double Fat
+        string Summary
+        datetime GeneratedAt
+    }
+    UserGoal {
+        int Id PK
+        int UserId FK
+        double TargetCalories
+        double TargetProtein
+        double TargetCarbs
+        double TargetFat
+        double TargetWater
+        string TimeZoneId
+        string Region
+        bool IsDarkMode
+    }
+    AIRecommendation {
+        int Id PK
+        string SuggestedMeal
+        string Reason
+        int EstimatedCalories
+    }
+
+    User ||--o{ Meal : "logs"
+    User ||--o{ WaterIntake : "records"
+    User ||--o{ ShoppingListItem : "manages"
+    User ||--o{ HealthReport : "generates"
+    User ||--|| UserGoal : "sets"
+```
+
+### Normalisation Analysis
+
+#### First Normal Form (1NF)
+
+All tables satisfy 1NF: every column holds atomic (indivisible) values, each row is unique via a surrogate primary key (`Id`), and there are no repeating groups.
+
+| Table | PK | Atomic Columns | Repeating Groups? |
+| --- | --- | --- | --- |
+| User | Id | Username, PasswordHash, Role | ✗ None |
+| Meal | Id | UserId, Name, Calories, Protein, Carbs, Fat, LoggedAt | ✗ None |
+| WaterIntake | Id | UserId, Amount, LoggedAt | ✗ None |
+| ShoppingListItem | Id | UserId, ItemName, Quantity, IsPurchased, PaymentMethod | ✗ None |
+| HealthReport | Id | UserId, TotalCalories, MealCount, Protein, Carbs, Fat, Summary, GeneratedAt | ✗ None |
+| UserGoal | Id | UserId, TargetCalories, TargetProtein, TargetCarbs, TargetFat, TargetWater, TimeZoneId, Region, IsDarkMode | ✗ None |
+| AIRecommendation | Id | SuggestedMeal, Reason, EstimatedCalories | ✗ None |
+
+#### Second Normal Form (2NF)
+
+All tables satisfy 2NF: each uses a single-column surrogate PK (`Id`), so partial dependencies on a composite key are impossible. Every non-key column depends on the entire PK.
+
+| Table | PK | Non-Key Columns | Partial Dependency? |
+| --- | --- | --- | --- |
+| User | Id | Username, PasswordHash, Role | ✗ Single-column PK |
+| Meal | Id | UserId, Name, Calories, Protein, Carbs, Fat, LoggedAt | ✗ Single-column PK |
+| WaterIntake | Id | UserId, Amount, LoggedAt | ✗ Single-column PK |
+| ShoppingListItem | Id | UserId, ItemName, Quantity, IsPurchased, PaymentMethod | ✗ Single-column PK |
+| HealthReport | Id | UserId, TotalCalories, MealCount, Protein, Carbs, Fat, Summary, GeneratedAt | ✗ Single-column PK |
+| UserGoal | Id | UserId, TargetCalories, …, IsDarkMode | ✗ Single-column PK |
+| AIRecommendation | Id | SuggestedMeal, Reason, EstimatedCalories | ✗ Single-column PK |
+
+#### Third Normal Form (3NF)
+
+All tables satisfy 3NF: no non-key column transitively depends on the PK through another non-key column. Foreign keys (`UserId`) reference the `User` table directly and do not determine other non-key columns within the same table.
+
+| Table | Transitive Dependency? | Notes |
+| --- | --- | --- |
+| User | ✗ None | Role is a direct attribute of User |
+| Meal | ✗ None | UserId is an FK; Name, Calories, etc. depend only on Meal.Id |
+| WaterIntake | ✗ None | Amount, LoggedAt depend only on WaterIntake.Id |
+| ShoppingListItem | ✗ None | ItemName, Quantity, IsPurchased, PaymentMethod depend only on ShoppingListItem.Id |
+| HealthReport | ✗ None | All aggregation fields depend only on HealthReport.Id |
+| UserGoal | ✗ None | All target fields, TimeZoneId, Region, IsDarkMode depend only on UserGoal.Id |
+| AIRecommendation | ✗ None | Standalone table — no FK, no transitive path |
+
+---
+
 ## Future Plans
 - **AI integration**: re-enable Google Gemini API for meal nutrition estimates, personalised recommendations, and hydration advice (API key was attempted but did not work during development).
-- Replace in-memory DB with SQL Server or PostgreSQL for persistent storage.
+- Migrate from SQLite to SQL Server or PostgreSQL for production-grade scalability.
 - Add ASP.NET Core Identity or token-based authentication with password hashing.
 - Implement multi-user session isolation (per-user data scoping).
 - Add unit and integration test projects.
