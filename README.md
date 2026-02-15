@@ -190,6 +190,14 @@ erDiagram
 
 ### Development Environment Setup
 1. Install .NET 10 SDK.
+   ### Installing .NET 10 SDK (Mandatory) — if already installed, skip this step
+
+To install the .NET 10 SDK using Windows Package Manager (winget), run the following command in your terminal:
+
+```sh
+winget install Microsoft.DotNet.SDK.10
+```
+
 2. Clone the repository:
    ```bash
    git clone https://github.com/ZeroTrace0245/computer_project.git
