@@ -476,7 +476,7 @@ The AI Coach page in SmartBite will show a live connection status indicator — 
 
 ## Future Plans
 - ⚠️ **AI features full release**: The AI Health Coach, nutrition estimation, and recommendation features are currently work in progress. A stable release is planned once testing and prompt tuning are complete.
-- ⚠️ **Google Gemini integration**: In a future release, the AI backend may be updated to support Google Gemini API as an alternative to AI Foundry Local, allowing cloud-based AI for users who prefer not to run models locally.
+- ⚠️ **integrating Foundry Local AI**: In a future release, the AI backend will be updated to support AI Foundry Local, allowing to test AI and deploy AI.Google Gemini might not return for cloud based API backend.
 - Migrate from SQLite to SQL Server or PostgreSQL for production-grade scalability.
 - Add ASP.NET Core Identity or token-based authentication with password hashing.
 - Implement multi-user session isolation (per-user data scoping).
