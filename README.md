@@ -489,4 +489,4 @@ The AI Coach page in SmartBite will show a live connection status indicator — 
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the ownership quick-reference table and contributor details.
+See [CONTRIBUTING.md](https://github.com/ZeroTrace0245/SmartBit/blob/master/docs/CONTRIBUTING.md) for the ownership quick-reference table and contributor details.
