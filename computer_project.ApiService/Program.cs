@@ -35,16 +35,49 @@ using (var scope = app.Services.CreateScope())
     if (!db.Users.Any())
     {
         db.Users.Add(new User { Username = "user", PasswordHash = "password", Role = "EndUser" });
-        db.Users.Add(new User { Username = "admin", PasswordHash = "admin", Role = "Admin" });
+        db.Users.Add(new User { Username = "Admin", PasswordHash = "Admin1234", Role = "Admin" });
         db.UserGoals.Add(new UserGoal 
         { 
             UserId = 1, 
-            TargetCalories = 2000, 
-            TargetProtein = 150, 
-            TargetCarbs = 200, 
-            TargetFat = 65, 
-            TargetWater = 2.5 
+            TargetCalories = 2200, 
+            TargetProtein = 160, 
+            TargetCarbs = 250, 
+            TargetFat = 70, 
+            TargetWater = 3.0 
         });
+
+        // Add some random meals for the last 7 days
+        var random = new Random();
+        var mealNames = new[] { "Chicken Breast", "Oatmeal", "Greek Yogurt", "Salmon & Avocado", "Quinoa Salad", "Protein Shake", "Steak & Potatoes", "Brown Rice & Beans" };
+        for (int i = 0; i < 20; i++)
+        {
+            db.Meals.Add(new Meal
+            {
+                UserId = 1,
+                Name = mealNames[random.Next(mealNames.Length)],
+                Calories = random.Next(300, 800),
+                Protein = random.Next(20, 50),
+                Carbs = random.Next(10, 80),
+                Fat = random.Next(5, 30),
+                LoggedAt = DateTime.UtcNow.AddDays(-random.Next(0, 7))
+            });
+        }
+
+        // Add some random water intake
+        for (int i = 0; i < 15; i++)
+        {
+            db.WaterIntakes.Add(new WaterIntake
+            {
+                UserId = 1,
+                Amount = random.NextDouble() * 1.5,
+                LoggedAt = DateTime.UtcNow.AddDays(-random.Next(0, 7))
+            });
+        }
+
+        db.ShoppingListItems.Add(new ShoppingListItem { UserId = 1, ItemName = "Avocados", Quantity = "3", IsPurchased = false });
+        db.ShoppingListItems.Add(new ShoppingListItem { UserId = 1, ItemName = "Chicken Breast", Quantity = "1kg", IsPurchased = true });
+        db.ShoppingListItems.Add(new ShoppingListItem { UserId = 1, ItemName = "Greek Yogurt", Quantity = "500g", IsPurchased = false });
+
         db.SaveChanges();
     }
 }
@@ -52,6 +85,9 @@ using (var scope = app.Services.CreateScope())
 // --- Endpoints ---
 
 // User
+app.MapGet("/users", async (AppDbContext db) => 
+    await db.Users.ToListAsync());
+
 app.MapGet("/users/{id}", async (int id, AppDbContext db) => 
     await db.Users.FindAsync(id) is User user ? Results.Ok(user) : Results.NotFound());
 
@@ -73,6 +109,28 @@ app.MapPost("/login", async (LoginRequest request, AppDbContext db) =>
 {
     var user = await db.Users.FirstOrDefaultAsync(u => u.Username == request.Username && u.PasswordHash == request.Password);
     return user is not null ? Results.Ok(user) : Results.Unauthorized();
+});
+
+app.MapDelete("/users/{id}", async (int id, AppDbContext db) =>
+{
+    var user = await db.Users.FindAsync(id);
+    if (user is null) return Results.NotFound();
+    db.Users.Remove(user);
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+app.MapPut("/users/{id}", async (int id, User updatedUser, AppDbContext db) =>
+{
+    var user = await db.Users.FindAsync(id);
+    if (user is null) return Results.NotFound();
+
+    user.Username = updatedUser.Username;
+    user.Role = updatedUser.Role;
+    // Password update omitted for simplicity or you can add it if needed
+    
+    await db.SaveChangesAsync();
+    return Results.NoContent();
 });
 
 // Meals
@@ -105,8 +163,20 @@ app.MapPut("/shoppinglist/{id}", async (int id, ShoppingListItem inputItem, AppD
     item.IsPurchased = inputItem.IsPurchased;
     item.ItemName = inputItem.ItemName;
     item.Quantity = inputItem.Quantity;
-    
+    item.PaymentMethod = inputItem.PaymentMethod;
+
     await db.SaveChangesAsync();
+    return Results.NoContent();
+});
+
+app.MapDelete("/shoppinglist/{id}", async (int id, AppDbContext db) =>
+{
+    var item = await db.ShoppingListItems.FindAsync(id);
+    if (item is null) return Results.NotFound();
+
+    db.ShoppingListItems.Remove(item);
+    await db.SaveChangesAsync();
+
     return Results.NoContent();
 });
 

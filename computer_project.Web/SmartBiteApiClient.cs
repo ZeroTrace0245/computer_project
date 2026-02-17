@@ -30,6 +30,11 @@ public class SmartBiteApiClient(HttpClient httpClient)
         await httpClient.PutAsJsonAsync($"/shoppinglist/{item.Id}", item, cancellationToken);
     }
 
+    public async Task DeleteShoppingListItemAsync(int id, CancellationToken cancellationToken = default)
+    {
+        await httpClient.DeleteAsync($"/shoppinglist/{id}", cancellationToken);
+    }
+
     public async Task<HealthReport?> GetReportAsync(CancellationToken cancellationToken = default)
     {
         return await httpClient.GetFromJsonAsync<HealthReport>("/stats", cancellationToken);
@@ -92,6 +97,21 @@ public class SmartBiteApiClient(HttpClient httpClient)
             return await response.Content.ReadFromJsonAsync<User>(ct);
         }
         return null;
+    }
+
+    public async Task<List<User>> GetUsersAsync(CancellationToken ct = default)
+    {
+        return await httpClient.GetFromJsonAsync<List<User>>("/users", ct) ?? [];
+    }
+
+    public async Task DeleteUserAsync(int id, CancellationToken ct = default)
+    {
+        await httpClient.DeleteAsync($"/users/{id}", ct);
+    }
+
+    public async Task UpdateUserAsync(User user, CancellationToken ct = default)
+    {
+        await httpClient.PutAsJsonAsync($"/users/{user.Id}", user, ct);
     }
 
     public async Task<NutritionEstimation?> GetNutritionEstimationAsync(string mealDescription, CancellationToken ct = default)

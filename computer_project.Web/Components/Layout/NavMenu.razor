@@ -1,59 +1,10 @@
-﻿<div class="top-row ps-4 navbar navbar-dark d-flex align-items-center">
-    <div class="container-fluid">
-        <a class="navbar-brand text-white fs-5 fw-bold" href="">SmartBite</a>
-    </div>
-</div>
-
-<div class="nav-scrollable">
-    <nav class="nav flex-column mt-2">
-        <div class="nav-item">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <i class="bi bi-house me-2"></i> Home
-            </NavLink>
-        </div>
-
-        <div class="nav-item">
-            <NavLink class="nav-link" href="dashboard">
-                <i class="bi bi-grid-1x2 me-2"></i> Dashboard
-            </NavLink>
-        </div>
-
-        <div class="nav-item">
-            <NavLink class="nav-link" href="meals">
-                <i class="bi bi-calendar-event me-2"></i> Meal History
-            </NavLink>
-        </div>
-
-        <div class="nav-item">
-            <NavLink class="nav-link" href="water">
-                <i class="bi bi-droplet me-2"></i> Water Intake
-            </NavLink>
-        </div>
-
-        <div class="nav-item">
-            <NavLink class="nav-link" href="shoppinglist">
-                <i class="bi bi-cart me-2"></i> Shopping List
-            </NavLink>
-        </div>
-
-        <div class="nav-item">
-            <NavLink class="nav-link" href="reports">
-                <i class="bi bi-file-earmark-bar-graph me-2"></i> Health Reports
-            </NavLink>
-        </div>
-
-        <div class="mt-4 px-3 small text-white-50 text-uppercase fw-bold" style="font-size: 11px;">Support</div>
-
-        <div class="nav-item">
-            <NavLink class="nav-link" href="feedback">
-                <i class="bi bi-chat-left-dots me-2"></i> Feedback
-            </NavLink>
-        </div>
-
-        <div class="nav-item">
-            <NavLink class="nav-link" href="settings">
-                <i class="bi bi-gear me-2"></i> Settings
-            </NavLink>
-        </div>
-    </nav>
-</div>
+﻿<NavLink class="nav-link ..." href="dashboard">Dashboard</NavLink>
+<NavLink class="nav-link ..." href="" Match="NavLinkMatch.All">Home</NavLink>
+<NavLink class="nav-link ..." href="meals">Log History</NavLink>
+<NavLink class="nav-link ..." href="reports">Performance</NavLink>
+<NavLink class="nav-link ..." href="water">Hydration</NavLink>
+<NavLink class="nav-link ..." href="shoppinglist">Groceries</NavLink>
+@if (Session.IsAdmin) { <NavLink href="settings">System Settings</NavLink> }
+else { <NavLink href="settings">Settings</NavLink> }
+<NavLink class="nav-link ..." href="feedback">Support</NavLink>
+<NavLink class="nav-link ..." href="labs">Labs</NavLink>
