@@ -118,8 +118,22 @@ public class SmartBiteApiClient(HttpClient httpClient)
     {
         return await httpClient.GetFromJsonAsync<NutritionEstimation>($"/ai/estimate?mealDescription={Uri.EscapeDataString(mealDescription)}", ct);
     }
+
+    public async Task<bool> IsAIOnlineAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            var result = await httpClient.GetFromJsonAsync<AIStatusResponse>("/ai/status", ct);
+            return result?.Status == "online";
+        }
+        catch
+        {
+            return false;
+        }
+    }
 }
 
 public record NutritionEstimation(double Calories, double Protein, double Carbs, double Fat);
+public record AIStatusResponse(string Status, string Endpoint);
 
 

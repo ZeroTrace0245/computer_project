@@ -11,16 +11,21 @@ builder.AddServiceDefaults();
 // Add services to the container.
 builder.Services.AddProblemDetails();
 builder.Services.AddOpenApi();
-builder.Services.AddHttpClient<AIService>();
+builder.Services.AddResponseCompression();
 
-// Use In-Memory for now
+// Register AIService as singleton with its own HttpClient (bypasses Aspire's
+// standard resilience 10s timeout — local AI inference needs much longer)
+builder.Services.AddSingleton<AIService>();
+
+// Use SQLite for persistent, portable storage (just copy SmartBite.db to another device)
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseInMemoryDatabase("SmartBite"));
+    options.UseSqlite("Data Source=SmartBite.db"));
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler();
+app.UseResponseCompression();
 
 if (app.Environment.IsDevelopment())
 {
@@ -86,7 +91,7 @@ using (var scope = app.Services.CreateScope())
 
 // User
 app.MapGet("/users", async (AppDbContext db) => 
-    await db.Users.ToListAsync());
+    await db.Users.AsNoTracking().ToListAsync());
 
 app.MapGet("/users/{id}", async (int id, AppDbContext db) => 
     await db.Users.FindAsync(id) is User user ? Results.Ok(user) : Results.NotFound());
@@ -135,7 +140,7 @@ app.MapPut("/users/{id}", async (int id, User updatedUser, AppDbContext db) =>
 
 // Meals
 app.MapGet("/meals", async (AppDbContext db) => 
-    await db.Meals.OrderByDescending(m => m.LoggedAt).ToListAsync());
+    await db.Meals.AsNoTracking().OrderByDescending(m => m.LoggedAt).ToListAsync());
 
 app.MapPost("/meals", async (Meal meal, AppDbContext db) =>
 {
@@ -146,7 +151,7 @@ app.MapPost("/meals", async (Meal meal, AppDbContext db) =>
 
 // Shopping List
 app.MapGet("/shoppinglist", async (AppDbContext db) => 
-    await db.ShoppingListItems.ToListAsync());
+    await db.ShoppingListItems.AsNoTracking().ToListAsync());
 
 app.MapPost("/shoppinglist", async (ShoppingListItem item, AppDbContext db) =>
 {
@@ -183,29 +188,51 @@ app.MapDelete("/shoppinglist/{id}", async (int id, AppDbContext db) =>
 // Stats / Reports
 app.MapGet("/stats", async (AppDbContext db, AIService ai) => 
 {
-    var meals = await db.Meals.ToListAsync();
-    var goal = await db.UserGoals.FirstOrDefaultAsync(g => g.UserId == 1);
+    var stats = await db.Meals.GroupBy(_ => 1).Select(g => new
+    {
+        TotalCalories = g.Sum(m => m.Calories),
+        MealCount = g.Count(),
+        Protein = g.Sum(m => m.Protein),
+        Carbs = g.Sum(m => m.Carbs),
+        Fat = g.Sum(m => m.Fat)
+    }).FirstOrDefaultAsync();
+
+    var goal = await db.UserGoals.AsNoTracking().FirstOrDefaultAsync(g => g.UserId == 1);
 
     var report = new HealthReport {
-        UserId = 1, // Default for demo
-        TotalCalories = meals.Sum(m => m.Calories),
-        MealCount = meals.Count,
-        Protein = meals.Sum(m => m.Protein),
-        Carbs = meals.Sum(m => m.Carbs),
-        Fat = meals.Sum(m => m.Fat),
+        UserId = 1,
+        TotalCalories = stats?.TotalCalories ?? 0,
+        MealCount = stats?.MealCount ?? 0,
+        Protein = stats?.Protein ?? 0,
+        Carbs = stats?.Carbs ?? 0,
+        Fat = stats?.Fat ?? 0,
         GeneratedAt = DateTime.UtcNow
     };
 
-    report.Summary = await ai.GenerateHealthReportAsync(report, goal);
+    try
+    {
+        report.Summary = await ai.GenerateHealthReportAsync(report, goal);
+    }
+    catch
+    {
+        report.Summary = "AI summary unavailable — start AI Foundry Local for insights.";
+    }
     return report;
 });
 
 // AI Recommendations
 app.MapGet("/recommendations", async (AppDbContext db, AIService ai) => 
 {
-    var recentMeals = await db.Meals.OrderByDescending(m => m.LoggedAt).Take(10).ToListAsync();
-    var goal = await db.UserGoals.FirstOrDefaultAsync(g => g.UserId == 1);
-    return await ai.GetRecommendationsAsync(recentMeals, goal);
+    try
+    {
+        var recentMeals = await db.Meals.AsNoTracking().OrderByDescending(m => m.LoggedAt).Take(10).ToListAsync();
+        var goal = await db.UserGoals.AsNoTracking().FirstOrDefaultAsync(g => g.UserId == 1);
+        return await ai.GetRecommendationsAsync(recentMeals, goal);
+    }
+    catch
+    {
+        return new List<AIRecommendation>();
+    }
 });
 
 app.MapPost("/ai/chat", async (ChatRequest request, AIService ai) =>
@@ -220,13 +247,33 @@ app.MapGet("/ai/estimate", async (string mealDescription, AIService ai) =>
     return estimation is not null ? Results.Ok(estimation) : Results.NotFound();
 });
 
+app.MapGet("/ai/status", async (AIService ai) =>
+{
+    try
+    {
+        var response = await ai.CheckStatusAsync();
+        return Results.Ok(response);
+    }
+    catch
+    {
+        return Results.Ok(new { Status = "offline", Endpoint = "" });
+    }
+});
+
 // Water Tracking
 app.MapGet("/water", async (AppDbContext db) => 
-    await db.WaterIntakes.OrderByDescending(w => w.LoggedAt).ToListAsync());
+    await db.WaterIntakes.AsNoTracking().OrderByDescending(w => w.LoggedAt).ToListAsync());
 
 app.MapGet("/water/advice", async (double current, double target, AIService ai) => 
 {
-    return await ai.GetWaterAdviceAsync(current, target);
+    try
+    {
+        return await ai.GetWaterAdviceAsync(current, target);
+    }
+    catch
+    {
+        return "Stay hydrated! Start AI Foundry Local for personalized advice.";
+    }
 });
 
 app.MapPost("/water", async (WaterIntake intake, AppDbContext db) =>
@@ -238,7 +285,7 @@ app.MapPost("/water", async (WaterIntake intake, AppDbContext db) =>
 
 // User Goals
 app.MapGet("/goals/{userId}", async (int userId, AppDbContext db) =>
-    await db.UserGoals.FirstOrDefaultAsync(g => g.UserId == userId) is UserGoal goal 
+    await db.UserGoals.AsNoTracking().FirstOrDefaultAsync(g => g.UserId == userId) is UserGoal goal 
         ? Results.Ok(goal) 
         : Results.NotFound());
 

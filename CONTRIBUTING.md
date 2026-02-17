@@ -1,363 +1,300 @@
-# Contribution Guide — SmartBite
+# Contributing to SmartBite
 
-Nine members, nine areas. Each section lists the files you own, what to work on, and the key code you'll touch.
+> Contribution guide for the PUSL2021 Computing Group Project.
 
----
-
-## Member 1 — Layout & Responsiveness
-
-**Goal**: Optimise the main grid, sticky header, and mobile sidebar toggle.
-
-**Files**:
-- `computer_project.Web/Components/Layout/MainLayout.razor` — page grid, sidebar toggle, sticky top bar
-- `computer_project.Web/Components/Layout/MainLayout.razor.css` — flex layout, breakpoints, sidebar width
-- `computer_project.Web/wwwroot/app.css` — `.page`, `.sidebar`, `@media` rules
-
-**What to do**:
-- Fix `MainLayout.razor.css` breakpoint at `641px` to match Bootstrap's `992px (lg)` used in the razor markup (`d-lg-none`).
-- Ensure `.page` uses `flex-direction: row` at `lg` breakpoint, not `641px`.
-- Test sidebar overlay on mobile (`sidebarShow` toggle + `.modal-backdrop`).
-- Verify sticky header stays pinned during scroll on all viewports.
-
-**Key code** (`MainLayout.razor` lines 8–90):
-```razor
-<div class="page">
-    <div class="sidebar mica-effect @(sidebarShow ? "show" : "")">
-        <NavMenu />
-    </div>
-    <main>
-        <div class="top-row ... position: sticky; top: 0; z-index: 1000;">
-            <button class="btn ... d-lg-none" @onclick="ToggleSidebar">
-            ...
-        </div>
-        <div class="content px-3 px-md-4">@Body</div>
-    </main>
-    @if (sidebarShow) { <div class="modal-backdrop ..."> }
-</div>
-```
-
-**Key code** (`MainLayout.razor.css` lines 49–77):
-```css
-@media (min-width: 641px) {   /* ← align with lg breakpoint */
-    .page { flex-direction: row; }
-    .sidebar { width: 250px; height: 100vh; position: sticky; top: 0; }
-}
-```
+> ⚠️ **Requires .NET 10 SDK.** Earlier SDK versions are not supported.
 
 ---
 
-## Member 2 — Theming Pipeline
+## Getting Started
 
-**Goal**: Refine dark/light toggle, ensure consistent CSS tokens, and mica/acrylic effects.
+### Installing .NET 10 SDK (Mandatory) — if already installed, skip this
 
-**Files**:
-- `computer_project.Web/Components/Layout/MainLayout.razor` — `ToggleDarkMode()`, `ApplyTheme()`
-- `computer_project.Web/wwwroot/app.css` — `:root` tokens, `[data-bs-theme="dark"]`, `.mica-effect`, `.acrylic-effect`
-- `computer_project.Web/Services/UserSession.cs` — `IsDarkMode`, `SetTheme()`
+To install the .NET 10 SDK using Windows Package Manager (winget), run the following command in your terminal:
 
-**What to do**:
-- Wire the `ToggleDarkMode()` method to a visible button in the header (currently unused).
-- Ensure `ApplyTheme()` JS interop sets `data-bs-theme` on `<html>` element.
-- Audit all cards/surfaces for `var(--win11-surface)` and `var(--win11-text)` usage.
-- Verify `.mica-effect` and `.acrylic-effect` render correctly in both themes.
+```sh
+winget install Microsoft.DotNet.SDK.10
+```
 
-**Key code** (`MainLayout.razor` lines 101–113):
+1. Clone the repo and switch to a feature branch:
+
+```sh
+git clone https://github.com/ZeroTrace0245/computer_project.git
+cd computer_project
+git checkout -b feature/<your-area>
+```
+
+2. Restore and run:
+
+```sh
+dotnet restore
+dotnet run --project computer_project.ApiService
+dotnet watch --project computer_project.Web
+```
+
+3. Make changes, test locally, commit with a clear message, and open a pull request.
+
+---
+
+## Contribution Areas
+
+### Member 1 — Layout & Responsiveness (DGJKM Madugalla)
+**Goal**: Maintain the mica/acrylic visual identity and responsive layout.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.Web/Components/Layout/MainLayout.razor` | Shell layout (sidebar, content area, header) |
+| `computer_project.Web/wwwroot/app.css` | All CSS: mica/acrylic backdrop, dark/light, cards |
+
+**Tasks**:
+- Adjust sidebar breakpoints for mobile viewports.
+- Fine-tune acrylic blur/opacity values.
+- Ensure `data-bs-theme` toggle propagates to all nested components.
+
+---
+
+### Member 2 — Theming Pipeline (Sathira lakshan)
+**Goal**: Keep sidebar navigation in sync with page routes.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.Web/Components/Layout/NavMenu.razor` | Sidebar links, icons, active-state highlighting |
+| Each `@page` directive in `Pages/*.razor` | Route registration |
+
+**Tasks**:
+- Add/remove nav items when pages are created or renamed.
+- Maintain consistent icon usage (`bi bi-*`).
+- Test deep-link navigation (paste URL directly).
+
+---
+
+### Member 3 — Navigation & Routing (Rhls.dayananda)
+**Goal**: Manage login state, roles, and conditional UI rendering.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.Web/Services/UserSession.cs` | `CurrentUser`, `IsAdmin`, `IsEndUser`, `Login()`, `Logout()` |
+| `computer_project.Web/Components/ConsumerOnly.razor` | Blocks admin from consumer-only pages |
+
+**Tasks**:
+- Ensure `OnChange` event fires on every state mutation.
+- Add new role gates if needed (`AdminOnly`, etc.).
+- Harden logout to clear all session fields.
+
+---
+
+### Member 4 — Session State (KGSN Bandara)
+**Goal**: Meal CRUD and history display.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.Web/Components/Pages/MealLogging.razor` | UI: form inputs, table, CSV export |
+| `computer_project.Web/SmartBiteApiClient.cs` | `GetMealsAsync()`, `AddMealAsync()` |
+| `computer_project.ApiService/Program.cs` | `GET /meals`, `POST /meals` endpoints |
+
+**Tasks**:
+- Validate input before POST (non-empty name, positive calories).
+- Add inline editing or delete for existing meals.
+- Extend CSV export with additional columns if needed.
+
+---
+
+### Member 5 — Auth Flows (Athukoralage Pabasara)
+**Goal**: Water intake logging and history.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.Web/Components/Pages/WaterTracking.razor` | UI: log form, intake list |
+| `computer_project.Web/SmartBiteApiClient.cs` | `GetWaterIntakesAsync()`, `AddWaterIntakeAsync()` |
+| `computer_project.ApiService/Program.cs` | `GET /water`, `POST /water` endpoints |
+
+**Tasks**:
+- Add daily total calculation.
+- Show progress toward `UserGoal.TargetWater`.
+
+---
+
+### Member 6 — Header Actions (Abekon Abekon)
+**Goal**: Grocery management with payment tagging and checkout tracker.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.Web/Components/Pages/ShoppingList.razor` | UI: add/delete items, checkout progress |
+| `computer_project.Web/SmartBiteApiClient.cs` | `GetShoppingListAsync()`, `AddShoppingListItemAsync()`, `DeleteShoppingListItemAsync()` |
+| `computer_project.ApiService/Program.cs` | `GET /shoppinglist`, `POST /shoppinglist`, `DELETE /shoppinglist/{id}` |
+
+**Tasks**:
+- Polish checkout tracker animation.
+- Allow editing item quantity after creation.
+- Add category/tag filtering.
+
+---
+
+### Member 7 — Profile Chip (D.M.Nisansala Niroshani)
+**Goal**: Summary cards, daily stats, and export.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.Web/Components/Pages/Dashboard.razor` | Summary cards (calories, protein, meals, water) |
+| `computer_project.Web/Components/Pages/Reports.razor` | Detailed report view, CSV export |
+| `computer_project.ApiService/Program.cs` | `GET /stats` endpoint |
+
+**Tasks**:
+- Add trend charts (line/bar) using a JS chart library.
+- Extend CSV to include water and grocery data.
+- Add PDF export option.
+
+---
+
+### Member 8 — Feedback / Contact (BSB ABEYSOORIYA)
+**Goal**: Admin-only configuration and user management.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.Web/Components/Pages/Settings.razor` | Goal config, theme, user list (admin only) |
+| `computer_project.ApiService/Program.cs` | `GET /users`, `GET /goals`, `POST /goals` |
+
+**Tasks**:
+- Add user deletion from admin panel.
+- Allow admin to reset a user's password.
+- Validate goal values (no negatives).
+
+---
+
+### Member 9 — API Client & Database · Working with AI Locally (Sachitha Rathnayaka)
+**Goal**: Implement and maintain AI features using **AI Foundry Local** — all AI processing runs entirely on-device with no cloud APIs or API keys required.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.ApiService/Services/AIService.cs` | Backend AI service — chat completions, nutrition estimation, recommendations, report summaries, hydration tips via AI Foundry Local |
+| `computer_project.Web/Components/Pages/AICoach.razor` | AI Health Coach UI — chat interface, connection status indicator, setup instructions |
+| `computer_project.Web/SmartBiteApiClient.cs` | HTTP client methods: `IsAIOnlineAsync()`, `GetAICoachAdviceAsync()`, etc. |
+| `computer_project.ApiService/Program.cs` | AI-related API endpoints (`/ai/chat`, `/ai/status`, `/ai/nutrition`, `/ai/recommendations`) |
+| `computer_project.ApiService/appsettings.json` | `LocalAI` configuration section (`Endpoint`, `Model`) |
+| `computer_project.ApiService/Data/AppDbContext.cs` | EF Core DbContext — `AIRecommendations` DbSet |
+| `computer_project.ApiService/Models.cs` | `AIRecommendation` entity model |
+
+#### What is AI Foundry Local?
+
+[AI Foundry Local](https://github.com/microsoft/ai-foundry-local) is a Microsoft tool that lets you download and run AI models directly on your machine. SmartBite uses it to power all AI features without sending any data to cloud services.
+
+- **Model used**: `phi-3.5-mini` — a compact, fast language model suitable for nutrition advice and meal estimation.
+- **Protocol**: AI Foundry Local exposes an OpenAI-compatible `/v1/chat/completions` endpoint on `localhost`. `AIService.cs` sends standard chat-completion requests to this local server.
+- **No API keys needed**: everything stays on-device.
+
+#### How it works in SmartBite
+
+1. **`AIService.cs`** connects to AI Foundry Local at the configured endpoint (default `http://localhost:5272`) and sends chat-completion requests with a nutrition-focused system prompt.
+2. **Five AI capabilities** are exposed:
+   - `GetChatResponseAsync()` — general nutrition/health chat
+   - `EstimateNutritionAsync()` — parses a meal description into calories, protein, carbs, fat (JSON)
+   - `GetRecommendationsAsync()` — suggests meals based on recent logs and user goals
+   - `GenerateHealthReportAsync()` — produces a 2–3 sentence daily health assessment
+   - `GetWaterAdviceAsync()` — motivational hydration tips
+3. **`AICoach.razor`** provides the user-facing chat UI with a live connection status badge (green = connected, red = offline) and inline setup instructions.
+
+#### Setup
+
+```sh
+# Install AI Foundry Local (one-time)
+winget install Microsoft.AIFoundryLocal
+
+# Download the model
+foundry model download phi-3.5-mini
+
+# Start the local server (must be running before using AI features)
+foundry service start
+```
+
+> ⚠️ The port changes every time Foundry starts. Check the output line `Service is Started on http://127.0.0.1:XXXXX/` and update `computer_project.ApiService/appsettings.json` → `"Endpoint"` if the port differs.
+
+**Tasks**:
+- Continue tuning AI prompts for better nutrition estimates.
+- Add conversation history support for multi-turn coaching.
+- Integrate AI recommendations into the Dashboard.
+- Add fallback messages when the model is unavailable.
+
+---
+
+### Member 10 — Database Design & SQL (AMGG ADHIKARI)
+
+**Goal**: Design, maintain, and evolve the SQLite database schema and EF Core data layer.
+
+| File | Purpose |
+| --- | --- |
+| `computer_project.ApiService/Data/AppDbContext.cs` | EF Core `DbContext` — 7 DbSets (Users, Meals, ShoppingListItems, HealthReports, AIRecommendations, WaterIntakes, UserGoals) |
+| `computer_project.ApiService/Models.cs` | All entity classes: `User`, `Meal`, `WaterIntake`, `ShoppingListItem`, `HealthReport`, `UserGoal`, `AIRecommendation` |
+| `computer_project.ApiService/Program.cs` (lines 17-18) | SQLite connection string: `Data Source=SmartBite.db` |
+| `computer_project.ApiService/Program.cs` (lines 31-82) | Seed data block — pre-populates DB on first run |
+| `computer_project.ApiService/computer_project.ApiService.csproj` | NuGet: `Microsoft.EntityFrameworkCore.Sqlite` v10.0.3 |
+
+**Key code — SQLite registration** (`Program.cs`):
+
 ```csharp
-protected override async Task OnAfterRenderAsync(bool firstRender)
-{
-    if (firstRender) { await ApplyTheme(); }
-}
-private async Task ToggleDarkMode()
-{
-    Session.SetTheme(!Session.IsDarkMode);
-    await ApplyTheme();
-}
-private async Task ApplyTheme()
-{
-    await JS.InvokeVoidAsync("setTheme", Session.IsDarkMode ? "dark" : "light");
-}
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite("Data Source=SmartBite.db"));
 ```
 
-**Key code** (`app.css` `:root` and dark tokens):
-```css
-:root {
-    --win11-accent: #0078d4;
-    --win11-surface: rgba(255, 255, 255, 0.7);
-    --win11-sidebar: rgba(18, 33, 65, 0.85);
-}
-[data-bs-theme="dark"] {
-    --win11-surface: rgba(43, 43, 43, 0.7);
-    --win11-sidebar: rgba(15, 23, 42, 0.9);
-}
-```
+**Key code — DbContext** (`AppDbContext.cs`):
 
----
-
-## Member 3 — Navigation & Routing
-
-**Goal**: Harden NavMenu routes, active-link states, and deep-link handling.
-
-**Files**:
-- `computer_project.Web/Components/Layout/NavMenu.razor` — sidebar nav items, `NavLink` components
-- `computer_project.Web/Components/Layout/NavMenu.razor.css` — active-link styling
-- `computer_project.Web/wwwroot/app.css` — `.nav-item .nav-link.active` styles
-
-**What to do**:
-- Verify every `NavLink href` matches its page `@page` directive (e.g. `href="meals"` → `@page "/meals"`).
-- Ensure `NavLinkMatch.All` is only on the Home route; all others default to prefix match.
-- Test deep-linking directly to `/reports`, `/water`, `/shoppinglist` etc.
-- Ensure admin-only "System Settings" vs consumer "Settings" renders the correct label.
-
-**Key code** (`NavMenu.razor` lines 16–99):
-```razor
-<NavLink class="nav-link ..." href="dashboard">Dashboard</NavLink>
-<NavLink class="nav-link ..." href="" Match="NavLinkMatch.All">Home</NavLink>
-<NavLink class="nav-link ..." href="meals">Log History</NavLink>
-<NavLink class="nav-link ..." href="reports">Performance</NavLink>
-<NavLink class="nav-link ..." href="water">Hydration</NavLink>
-<NavLink class="nav-link ..." href="shoppinglist">Groceries</NavLink>
-@if (Session.IsAdmin) { <NavLink href="settings">System Settings</NavLink> }
-else { <NavLink href="settings">Settings</NavLink> }
-<NavLink class="nav-link ..." href="feedback">Support</NavLink>
-<NavLink class="nav-link ..." href="labs">Labs</NavLink>
-```
-
----
-
-## Member 4 — Session State
-
-**Goal**: Improve `UserSession` lifecycle, null/role guards, and change notifications.
-
-**Files**:
-- `computer_project.Web/Services/UserSession.cs` — all session logic
-- `computer_project.Web/Components/Layout/MainLayout.razor` — `OnInitialized`, `Dispose` (event subscribe/unsubscribe)
-
-**What to do**:
-- Add null guard on `CurrentUser` access (e.g. `Username[0]` can throw if null).
-- Consider debouncing `NotifyStateChanged()` to avoid redundant re-renders.
-- Ensure `OnChange` event is unsubscribed in every component that subscribes (check `IDisposable`).
-- Add `TimeZoneId` and `SearchQuery` validation.
-
-**Key code** (`UserSession.cs` full file):
 ```csharp
-public class UserSession
+public class AppDbContext : DbContext
 {
-    public User? CurrentUser { get; private set; }
-    public bool IsLoggedIn => CurrentUser != null;
-    public bool IsAdmin => CurrentUser?.Role == "Admin";
-    public bool IsEndUser => CurrentUser?.Role == "EndUser";
-    public bool IsDarkMode { get; set; }
-    public string SearchQuery { get; private set; } = string.Empty;
-    public event Action? OnChange;
+    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-    public void Login(User user) { CurrentUser = user; NotifyStateChanged(); }
-    public void Logout() { CurrentUser = null; NotifyStateChanged(); }
-    public void SetTheme(bool dark) { IsDarkMode = dark; NotifyStateChanged(); }
-    public void SetSearch(string query) { SearchQuery = query; NotifyStateChanged(); }
-    public void NotifyStateChanged() => OnChange?.Invoke();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Meal> Meals => Set<Meal>();
+    public DbSet<ShoppingListItem> ShoppingListItems => Set<ShoppingListItem>();
+    public DbSet<HealthReport> HealthReports => Set<HealthReport>();
+    public DbSet<AIRecommendation> AIRecommendations => Set<AIRecommendation>();
+    public DbSet<WaterIntake> WaterIntakes => Set<WaterIntake>();
+    public DbSet<UserGoal> UserGoals => Set<UserGoal>();
 }
 ```
 
-**Key code** (`MainLayout.razor` subscribe/dispose):
-```csharp
-protected override void OnInitialized() { Session.OnChange += StateHasChanged; }
-public void Dispose() { Session.OnChange -= StateHasChanged; }
+**Tasks**:
+- Add `OnModelCreating` overrides to define explicit FK relationships and indexes.
+- Create EF Core migrations (`dotnet ef migrations add <Name>`).
+- Add cascade-delete rules between `User` and child tables.
+- Add data annotations or Fluent API constraints (e.g., `[Required]`, max lengths).
+- Validate normalization compliance (1NF/2NF/3NF) — see README Database Design section.
+
+**Migration commands**:
+
+```sh
+# Install EF tools (once)
+dotnet tool install --global dotnet-ef
+
+# Add a migration
+dotnet ef migrations add InitialCreate --project computer_project.ApiService
+
+# Apply to SmartBite.db
+dotnet ef database update --project computer_project.ApiService
 ```
 
 ---
 
-## Member 5 — Auth Flows
+## Commit History
 
-**Goal**: Enhance login/logout, protect admin-only UI, handle edge cases.
-
-**Files**:
-- `computer_project.Web/Components/Pages/Login.razor` — login form, `HandleLogin()`
-- `computer_project.Web/Components/Pages/Register.razor` — registration form
-- `computer_project.Web/Components/Pages/Settings.razor` — admin-only guard (`Session.IsAdmin`)
-- `computer_project.Web/Components/ConsumerOnly.razor` — role gate wrapper
-
-**What to do**:
-- Add redirect to `/login` when unauthenticated users hit protected pages.
-- Add login expiry/session timeout handling.
-- Ensure Settings page blocks consumers (`ConsumerOnly` or direct `Session.IsAdmin` check).
-- Validate admin badge rendering in `MainLayout.razor` line 48.
-
-**Key code** (`Login.razor` lines 58–80):
-```csharp
-private async Task HandleLogin()
-{
-    var user = await ApiClient.LoginAsync(username, password);
-    if (user != null) { Session.Login(user); Navigation.NavigateTo("/dashboard"); }
-    else { errorMessage = "Invalid username or password."; }
-}
-```
-
-**Key code** (`ConsumerOnly.razor`):
-```razor
-@if (Session.IsAdmin)
-{
-    <div>Consumer Access Only ... <a href="settings">User & System Management</a></div>
-}
-else { @ChildContent }
-```
-
----
-
-## Member 6 — Header Actions
-
-**Goal**: Wire the quick-action buttons (log meal, log water, notifications) to real functionality.
-
-**Files**:
-- `computer_project.Web/Components/Layout/MainLayout.razor` — header action buttons (lines 40–51)
-- `computer_project.Web/SmartBiteApiClient.cs` — `AddMealAsync()`, `AddWaterIntakeAsync()`
-
-**What to do**:
-- Wire "Quick Log Meal" button (`bi-plus-circle`) to open a modal or navigate to `/meals`.
-- Wire "Log Water" button (`bi-droplet`) to call `AddWaterIntakeAsync()` with a default amount or open a prompt.
-- Wire "Notifications" button (`bi-bell`) to show a dropdown or popover with recent activity.
-- All three are currently no-op `<button>` elements with no `@onclick`.
-
-**Key code** (`MainLayout.razor` lines 40–51):
-```razor
-@if (Session.IsEndUser)
-{
-    <button class="btn btn-sm btn-link text-muted" title="Quick Log Meal">
-        <i class="bi bi-plus-circle"></i>
-    </button>
-    <button class="btn btn-sm btn-link text-muted" title="Log Water">
-        <i class="bi bi-droplet"></i>
-    </button>
-}
-else if (Session.IsAdmin)
-{
-    <span class="badge ...">ADMIN CONSOLE</span>
-}
-<button class="btn btn-sm btn-link text-muted" title="Notifications">
-    <i class="bi bi-bell"></i>
-</button>
-```
-
----
-
-## Member 7 — Profile Chip
-
-**Goal**: Handle missing initials, long usernames, and avatar fallback.
-
-**Files**:
-- `computer_project.Web/Components/Layout/MainLayout.razor` — profile section (lines 53–64)
-- `computer_project.Web/Services/UserSession.cs` — `CurrentUser` properties
-
-**What to do**:
-- Guard `Username[0]` against null/empty (currently can throw `NullReferenceException`).
-- Truncate long usernames in the display (`text-truncate` or max-width).
-- Add a fallback avatar (e.g. `?` or generic icon) when `CurrentUser` is null.
-- Ensure role label displays correctly for all roles.
-
-**Key code** (`MainLayout.razor` lines 53–64):
-```razor
-@if (Session.IsLoggedIn)
-{
-    <div class="d-flex align-items-center ...">
-        <div class="text-end d-none d-md-block">
-            <div class="small fw-bold lh-1">@Session.CurrentUser?.Username</div>
-            <div class="text-muted small lh-1">@Session.CurrentUser?.Role</div>
-        </div>
-        <div class="bg-primary text-white rounded-circle ..." style="width: 32px; height: 32px;">
-            @Session.CurrentUser?.Username[0].ToString().ToUpper()  <!-- can throw -->
-        </div>
-    </div>
-}
-```
-
----
-
-## Member 8 — Feedback / Contact Feature
-
-**Goal**: Build out the feedback page with form validation, API submission, and success/error states.
-
-**Files**:
-- `computer_project.Web/Components/Pages/Feedback.razor` — UI form, rating stars, contact cards
-- `computer_project.Web/SmartBiteApiClient.cs` — add a `SubmitFeedbackAsync()` method
-- `computer_project.ApiService/Program.cs` — add a `POST /feedback` endpoint
-- `computer_project.Web/Models.cs` — add a `Feedback` model if needed
-
-**What to do**:
-- Add form validation (require rating + message before submit).
-- Wire submit button to call API and show success/error toast.
-- Add a `Feedback` model class and a `POST /feedback` endpoint on the API.
-- Consider adding a confirmation message or thank-you state after submit.
-
-**Key code** (`Feedback.razor` lines 59–80):
-```razor
-<div class="col-md-7">
-    <div class="card ...">
-        <h5>Send Us Feedback</h5>
-        <label>How would you rate your experience?</label>
-        <div class="d-flex gap-3">
-            @for (int i = 1; i <= 5; i++)
-            {
-                int rating = i;
-                <button class="btn @(currentRating >= rating ? "btn-primary" : "btn-outline-secondary")"
-                        @onclick="() => currentRating = rating">★ @rating</button>
-            }
-        </div>
-        <!-- TODO: add textarea + submit button + API call -->
-    </div>
-</div>
-```
-
----
-
-## Member 9 — API Client Hardening
-
-**Goal**: Add error handling, typed DTOs, retry logic, and cancellation across all API calls.
-
-**Files**:
-- `computer_project.Web/SmartBiteApiClient.cs` — all HTTP methods
-- `computer_project.Web/Models.cs` — model classes used as DTOs
-- `computer_project.ApiService/Program.cs` — API endpoints (response shapes)
-
-**What to do**:
-- Wrap every call in try/catch to handle `HttpRequestException` (see `GetGoalAsync` for the pattern).
-- Return typed result objects instead of raw nulls (e.g. `ApiResult<T>` with success/error).
-- Add retry/backoff for transient failures (consider `Polly` or manual retry loop).
-- Ensure all methods accept and forward `CancellationToken`.
-
-**Key code** (`SmartBiteApiClient.cs` — existing pattern to follow):
-```csharp
-public async Task<UserGoal?> GetGoalAsync(int userId, CancellationToken ct = default)
-{
-    try
-    {
-        return await httpClient.GetFromJsonAsync<UserGoal>($"/goals/{userId}", ct);
-    }
-    catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
-    {
-        return null;  // ← this pattern should be applied to all methods
-    }
-}
-```
-
-**Methods to harden**:
-- `GetMealsAsync`, `AddMealAsync`
-- `GetShoppingListAsync`, `AddShoppingListItemAsync`, `UpdateShoppingListItemAsync`, `DeleteShoppingListItemAsync`
-- `GetReportAsync`
-- `GetWaterIntakesAsync`, `AddWaterIntakeAsync`
-- `LoginAsync`, `RegisterUserAsync`
-- `GetUsersAsync`, `DeleteUserAsync`, `UpdateUserAsync`
+| Hash | Message | Author | Date |
+| --- | --- | --- | --- |
+| a478bd8 | remove the API key | Zero_Trace | 2026-02-07 |
+| 38d6684 | Add project files. | Zero_Trace | 2026-02-07 |
+| 8eff6e6 | Add .gitattributes and .gitignore. | Zero_Trace | 2026-02-07 |
 
 ---
 
 ## Quick Reference
 
-| # | Area | Primary File(s) | Owner |
-|---|------|-----------------|-------|
-| 1 | Layout & responsiveness | `MainLayout.razor`, `MainLayout.razor.css`, `app.css` | — |
-| 2 | Theming pipeline | `MainLayout.razor`, `app.css`, `UserSession.cs` | — |
-| 3 | Navigation & routing | `NavMenu.razor`, `NavMenu.razor.css`, `app.css` | — |
-| 4 | Session state | `UserSession.cs`, `MainLayout.razor` | — |
-| 5 | Auth flows | `Login.razor`, `Register.razor`, `Settings.razor`, `ConsumerOnly.razor` | — |
-| 6 | Header actions | `MainLayout.razor` (lines 40–51), `SmartBiteApiClient.cs` | — |
-| 7 | Profile chip | `MainLayout.razor` (lines 53–64), `UserSession.cs` | — |
-| 8 | Feedback/Contact | `Feedback.razor`, `SmartBiteApiClient.cs`, `Program.cs`, `Models.cs` | — |
-| 9 | API client hardening | `SmartBiteApiClient.cs`, `Models.cs`, `Program.cs` | — |
+| No. | Area | Primary Files | Owner |
+| --- | --- | --- | --- |
+| 1 | Layout & responsiveness | `MainLayout.razor`, `MainLayout.razor.css`, `app.css` | [DGJKM Madugalla](https://github.com/kaveeshajanith10-afk) |
+| 2 | Theming pipeline | `MainLayout.razor`, `app.css`, `UserSession.cs` | [Sathira lakshan](https://github.com/Sathi-26) |
+| 3 | Navigation & routing | `NavMenu.razor`, `NavMenu.razor.css`, `app.css` | [Rhls.dayananda](https://github.com/Lalindu01) |
+| 4 | Session state | `UserSession.cs`, `MainLayout.razor` | [KGSN Bandara](https://github.com/sahannirmal1511) |
+| 5 | Auth flows | `Login.razor`, `Register.razor`, `Settings.razor`, `ConsumerOnly.razor` | [Athukoralage Pabasara](https://github.com/MashiAshi) |
+| 6 | Header actions | `MainLayout.razor` (quick actions), `SmartBiteApiClient.cs` | [Abekon Abekon](https://github.com/induwarasandeepa2006) |
+| 7 | Profile chip | `MainLayout.razor` (profile section), `UserSession.cs` | [D.M.Nisansala Niroshani](https://github.com/NisansalaDMN) |
+| 8 | Feedback / contact | `Feedback.razor`, `SmartBiteApiClient.cs`, `Program.cs`, `Models.cs` | [BSB ABEYSOORIYA](https://github.com/sithiraabey) |
+| 9 | API client & database · AI locally | `SmartBiteApiClient.cs`, `Models.cs`, `Program.cs`, `AppDbContext.cs`, `AIService.cs`, `AICoach.razor` | [Sachitha Rathnayaka](https://github.com/ZeroTrace0245) |
+| 10 | Database design & SQL | `AppDbContext.cs`, `Models.cs`, `Program.cs` (SQLite config + seed data) | [AMGG ADHIKARI](https://github.com/gihangimnath2003-glitch) |

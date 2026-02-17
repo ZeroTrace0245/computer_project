@@ -2,36 +2,22 @@
 
 > Contribution guide for the PUSL2021 Computing Group Project.
 
-> ⚠️ **Requires .NET 10 SDK.** Earlier SDK versions are not supported.
-
 ---
 
 ## Getting Started
 
-### Installing .NET 10 SDK (Mandatory) — if already installed, skip this
-
-To install the .NET 10 SDK using Windows Package Manager (winget), run the following command in your terminal:
-
-```sh
-winget install Microsoft.DotNet.SDK.10
-```
-
 1. Clone the repo and switch to a feature branch:
-
-```sh
-git clone https://github.com/ZeroTrace0245/computer_project.git
-cd computer_project
-git checkout -b feature/<your-area>
-```
-
+   ```bash
+   git clone https://github.com/ZeroTrace0245/computer_project.git
+   cd computer_project
+   git checkout -b feature/<your-area>
+   ```
 2. Restore and run:
-
-```sh
-dotnet restore
-dotnet run --project computer_project.ApiService
-dotnet watch --project computer_project.Web
-```
-
+   ```bash
+   dotnet restore
+   dotnet run --project computer_project.ApiService
+   dotnet watch --project computer_project.Web
+   ```
 3. Make changes, test locally, commit with a clear message, and open a pull request.
 
 ---
@@ -161,58 +147,17 @@ dotnet watch --project computer_project.Web
 
 ---
 
-### Member 9 — API Client & Database · Working with AI Locally (Sachitha Rathnayaka)
-**Goal**: Implement and maintain AI features using **AI Foundry Local** — all AI processing runs entirely on-device with no cloud APIs or API keys required.
+### Member 9 — API Client & Database (Sachitha Rathnayaka)
+**Goal**: Contact/help entry point for users.
 
 | File | Purpose |
 | --- | --- |
-| `computer_project.ApiService/Services/AIService.cs` | Backend AI service — chat completions, nutrition estimation, recommendations, report summaries, hydration tips via AI Foundry Local |
-| `computer_project.Web/Components/Pages/AICoach.razor` | AI Health Coach UI — chat interface, connection status indicator, setup instructions |
-| `computer_project.Web/SmartBiteApiClient.cs` | HTTP client methods: `IsAIOnlineAsync()`, `GetAICoachAdviceAsync()`, etc. |
-| `computer_project.ApiService/Program.cs` | AI-related API endpoints (`/ai/chat`, `/ai/status`, `/ai/nutrition`, `/ai/recommendations`) |
-| `computer_project.ApiService/appsettings.json` | `LocalAI` configuration section (`Endpoint`, `Model`) |
-| `computer_project.ApiService/Data/AppDbContext.cs` | EF Core DbContext — `AIRecommendations` DbSet |
-| `computer_project.ApiService/Models.cs` | `AIRecommendation` entity model |
-
-#### What is AI Foundry Local?
-
-[AI Foundry Local](https://github.com/microsoft/ai-foundry-local) is a Microsoft tool that lets you download and run AI models directly on your machine. SmartBite uses it to power all AI features without sending any data to cloud services.
-
-- **Model used**: `phi-3.5-mini` — a compact, fast language model suitable for nutrition advice and meal estimation.
-- **Protocol**: AI Foundry Local exposes an OpenAI-compatible `/v1/chat/completions` endpoint on `localhost`. `AIService.cs` sends standard chat-completion requests to this local server.
-- **No API keys needed**: everything stays on-device.
-
-#### How it works in SmartBite
-
-1. **`AIService.cs`** connects to AI Foundry Local at the configured endpoint (default `http://localhost:5272`) and sends chat-completion requests with a nutrition-focused system prompt.
-2. **Five AI capabilities** are exposed:
-   - `GetChatResponseAsync()` — general nutrition/health chat
-   - `EstimateNutritionAsync()` — parses a meal description into calories, protein, carbs, fat (JSON)
-   - `GetRecommendationsAsync()` — suggests meals based on recent logs and user goals
-   - `GenerateHealthReportAsync()` — produces a 2–3 sentence daily health assessment
-   - `GetWaterAdviceAsync()` — motivational hydration tips
-3. **`AICoach.razor`** provides the user-facing chat UI with a live connection status badge (green = connected, red = offline) and inline setup instructions.
-
-#### Setup
-
-```sh
-# Install AI Foundry Local (one-time)
-winget install Microsoft.AIFoundryLocal
-
-# Download the model
-foundry model download phi-3.5-mini
-
-# Start the local server (must be running before using AI features)
-foundry service start
-```
-
-> ⚠️ The port changes every time Foundry starts. Check the output line `Service is Started on http://127.0.0.1:XXXXX/` and update `computer_project.ApiService/appsettings.json` → `"Endpoint"` if the port differs.
+| `computer_project.Web/Components/Pages/Feedback.razor` | Feedback form UI |
 
 **Tasks**:
-- Continue tuning AI prompts for better nutrition estimates.
-- Add conversation history support for multi-turn coaching.
-- Integrate AI recommendations into the Dashboard.
-- Add fallback messages when the model is unavailable.
+- Persist feedback to the database (new `Feedback` entity + endpoint).
+- Add success/error toast notifications.
+- Display submitted feedback list for admins.
 
 ---
 
@@ -229,14 +174,12 @@ foundry service start
 | `computer_project.ApiService/computer_project.ApiService.csproj` | NuGet: `Microsoft.EntityFrameworkCore.Sqlite` v10.0.3 |
 
 **Key code — SQLite registration** (`Program.cs`):
-
 ```csharp
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=SmartBite.db"));
 ```
 
 **Key code — DbContext** (`AppDbContext.cs`):
-
 ```csharp
 public class AppDbContext : DbContext
 {
@@ -260,8 +203,7 @@ public class AppDbContext : DbContext
 - Validate normalization compliance (1NF/2NF/3NF) — see README Database Design section.
 
 **Migration commands**:
-
-```sh
+```bash
 # Install EF tools (once)
 dotnet tool install --global dotnet-ef
 
@@ -280,11 +222,11 @@ dotnet ef database update --project computer_project.ApiService
 | --- | --- | --- | --- |
 | 1 | Layout & responsiveness | `MainLayout.razor`, `MainLayout.razor.css`, `app.css` | [DGJKM Madugalla](https://github.com/kaveeshajanith10-afk) |
 | 2 | Theming pipeline | `MainLayout.razor`, `app.css`, `UserSession.cs` | [Sathira lakshan](https://github.com/Sathi-26) |
-| 3 | Navigation & routing | `NavMenu.razor`, `NavMenu.razor.css`, `app.css` | [Rhls.dayananda](https://github.com/Lalindu01) |
+| 3 | Navigation & routing | `NavMenu.razor`, `NavMenu.razor.css`, `app.css` | [Rhls.dayananda]((https://github.com/Lalindu01)) |
 | 4 | Session state | `UserSession.cs`, `MainLayout.razor` | [KGSN Bandara](https://github.com/sahannirmal1511) |
-| 5 | Auth flows | `Login.razor`, `Register.razor`, `Settings.razor`, `ConsumerOnly.razor` | [Athukoralage Pabasara](https://github.com/MashiAshi) |
+| 5 | Auth flows | `Login.razor`, `Register.razor`, `Settings.razor`, `ConsumerOnly.razor`| [Athukoralage Pabasara](https://github.com/MashiAshi) |
 | 6 | Header actions | `MainLayout.razor` (quick actions), `SmartBiteApiClient.cs` | [Abekon Abekon](https://github.com/induwarasandeepa2006) |
 | 7 | Profile chip | `MainLayout.razor` (profile section), `UserSession.cs` | [D.M.Nisansala Niroshani](https://github.com/NisansalaDMN) |
 | 8 | Feedback / contact | `Feedback.razor`, `SmartBiteApiClient.cs`, `Program.cs`, `Models.cs` | [BSB ABEYSOORIYA](https://github.com/sithiraabey) |
-| 9 | API client & database · AI locally | `SmartBiteApiClient.cs`, `Models.cs`, `Program.cs`, `AppDbContext.cs`, `AIService.cs`, `AICoach.razor` | [Sachitha Rathnayaka](https://github.com/ZeroTrace0245) |
+| 9 | API client & database | `SmartBiteApiClient.cs`, `Models.cs`, `Program.cs`, `AppDbContext.cs` | [Sachitha Rathnayaka](https://github.com/ZeroTrace0245) |
 | 10 | Database design & SQL | `AppDbContext.cs`, `Models.cs`, `Program.cs` (SQLite config + seed data) | [AMGG ADHIKARI](https://github.com/gihangimnath2003-glitch) |

@@ -487,18 +487,18 @@ The primary gap is the lack of AI integration — the Google Gemini API key was 
 
 ## Appendix A — Team Contribution Matrix
 
-| Member | Area | Primary Files |
-| --- | --- | --- |
-| 1 | Layout & Theming | `MainLayout.razor`, `app.css` |
-| 2 | Navigation & Routing | `NavMenu.razor`, page `@page` directives |
-| 3 | Session & Roles | `UserSession.cs`, `ConsumerOnly.razor` |
-| 4 | Meal Logging | `MealLogging.razor`, API `/meals` |
-| 5 | Water Tracking | `WaterTracking.razor`, API `/water` |
-| 6 | Shopping List | `ShoppingList.razor`, API `/shoppinglist` |
-| 7 | Dashboard & Reports | `Dashboard.razor`, `Reports.razor`, API `/stats` |
-| 8 | Settings & Admin | `Settings.razor`, API `/users`, `/goals` |
-| 9 | Feedback & Support | `Feedback.razor` |
-| 10 | Database Design | `AppDbContext.cs`, `Models.cs`, SQLite config |
+| No. | Area | Primary Files | Index No. | Owner |
+| --- | --- | --- | --- | --- |
+| 1 | Layout & responsiveness | `MainLayout.razor`, `MainLayout.razor.css`, `app.css` | 10967337 | DGJKM Madugalla |
+| 2 | Theming pipeline | `MainLayout.razor`, `app.css`, `UserSession.cs` | 10967141 | Sathira lakshan |
+| 3 | Navigation & routing | `NavMenu.razor`, `NavMenu.razor.css`, `app.css` | 10967134 | Rhls.dayananda |
+| 4 | Session state | `UserSession.cs`, `MainLayout.razor` | 10967068 | KGSN Bandara |
+| 5 | Auth flows | `Login.razor`, `Register.razor`, `Settings.razor`, `ConsumerOnly.razor` | 10967388 | Athukoralage Pabasara |
+| 6 | Header actions | `MainLayout.razor` (quick actions), `SmartBiteApiClient.cs` | 10967136 | Abekon Abekon |
+| 7 | Profile chip | `MainLayout.razor` (profile section), `UserSession.cs` | 10967387 | D.M.Nisansala Niroshani |
+| 8 | Feedback / contact | `Feedback.razor`, `SmartBiteApiClient.cs`, `Program.cs`, `Models.cs` | 10967231 | BSB ABEYSOORIYA |
+| 9 | API client & database | `SmartBiteApiClient.cs`, `Models.cs`, `Program.cs`, `AppDbContext.cs` | 10967199 | Sachitha Rathnayaka |
+| 10 | Database design & SQL | `AppDbContext.cs`, `Models.cs`, `Program.cs` (SQLite config + seed data) | 10967175 | AMGG ADHIKARI |
 
 ---
 

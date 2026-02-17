@@ -2,7 +2,7 @@
 
 > A Blazor-based health companion — meal logging, water tracking, grocery planning, and role-aware access in a single repo.
 
-> ⚠️ **Requires .NET 10 SDK.** Earlier SDK versions are not supported.
+> ⚠️ **Requires .NET 10 or .NET 11 Preview SDK.** Earlier SDK versions are not supported.
 
 ---
 
@@ -20,13 +20,13 @@ SmartBite helps end users track daily calories/macros, water intake, and groceri
 - Minimal training required: the UI follows familiar patterns (sidebar navigation, card-based dashboards, form inputs).
 
 ### Technical Feasibility
-- Built on .NET 10 with Blazor Server — mature, well-documented stack with strong tooling (Visual Studio, dotnet CLI).
+- Built on .NET 10 / .NET 11 Preview with Blazor Server — mature, well-documented stack with strong tooling (Visual Studio, dotnet CLI).
 - SQLite database (`SmartBite.db`) via Entity Framework Core for lightweight persistent storage; swappable to SQL Server/PostgreSQL without code changes.
 - JS interop (`IJSRuntime`) handles theme persistence and file downloads where Blazor alone is insufficient.
 
 ### Economical Feasibility
 - All core tools are free/open-source: .NET SDK, Bootstrap, Entity Framework Core.
-- Hosting can run on any machine with the .NET 10 runtime — no paid cloud dependency required for development.
+- Hosting can run on any machine with the .NET 10 (or .NET 11 Preview) runtime — no paid cloud dependency required for development.
 
 ---
 
@@ -163,7 +163,7 @@ erDiagram
 ### Programming Languages and Tools
 | Tool / Language | Purpose |
 | --- | --- |
-| C# 14 / .NET 10 | Backend API and Blazor UI logic |
+| C# 14 / .NET 10–11 | Backend API and Blazor UI logic |
 | Razor (`.razor`) | Component markup and rendering |
 | HTML / CSS | Layout, styling, mica/acrylic effects |
 | JavaScript | Theme toggle and file download via `IJSRuntime` |
@@ -189,15 +189,7 @@ erDiagram
 ## Implementation Progress
 
 ### Development Environment Setup
-1. Install .NET 10 SDK.
-   ### Installing .NET 10 SDK (Mandatory) — if already installed, skip this step
-
-To install the .NET 10 SDK using Windows Package Manager (winget), run the following command in your terminal:
-
-```sh
-winget install Microsoft.DotNet.SDK.10
-```
-
+1. Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or the [.NET 11 Preview SDK](https://dotnet.microsoft.com/download/dotnet/11.0).
 2. Clone the repository:
    ```bash
    git clone https://github.com/ZeroTrace0245/computer_project.git
@@ -317,7 +309,7 @@ computer_project.AppHost/          # Host / bootstrap
 
 ## Database Design
 
-SmartBite uses **SQLite** (`SmartBite.db`) via `Microsoft.EntityFrameworkCore.Sqlite` v10.0.3. The schema is managed by EF Core through `AppDbContext` (7 DbSets). On first launch, `Program.cs` seeds demo data so the app is immediately usable.
+SmartBite uses **SQLite** (`SmartBite.db`) via `Microsoft.EntityFrameworkCore.Sqlite`. The schema is managed by EF Core through `AppDbContext` (7 DbSets). On first launch, `Program.cs` seeds demo data so the app is immediately usable.
 
 ### SQL ER Diagram
 
@@ -451,11 +443,11 @@ SmartBite uses [AI Foundry Local](https://github.com/microsoft/ai-foundry-local)
 
 ### AI Coach — Preview (work in progress)
 
-![AI Coach — work in progress](https://github.com/ZeroTrace0245/SmartBit/blob/463fb9894e90f59122e7e0cd3c969c989e8f64fc/screenshots/AI%20(working%20on%20Prograess).png)
+![AI Coach — work in progress](https://github.com/ZeroTrace0245/computer_project/blob/master/screenshots/AI%20(working%20on%20Prograess).png)
 
 ### AI Foundry Local — Running Locally
 
-![AI Foundry Local running on device](https://github.com/ZeroTrace0245/SmartBit/blob/463fb9894e90f59122e7e0cd3c969c989e8f64fc/screenshots/Local%20Foundary.png)
+![AI Foundry Local running on device](https://github.com/ZeroTrace0245/computer_project/blob/master/screenshots/Local%20Foundary.png)
 
 ### Setup
 
@@ -476,7 +468,7 @@ The AI Coach page in SmartBite will show a live connection status indicator — 
 
 ## Future Plans
 - ⚠️ **AI features full release**: The AI Health Coach, nutrition estimation, and recommendation features are currently work in progress. A stable release is planned once testing and prompt tuning are complete.
-- ⚠️ **integrating Foundry Local AI**: In a future release, the AI backend will be updated to support AI Foundry Local, allowing to test AI and deploy AI.Google Gemini might not return for cloud based API backend.
+- ⚠️ **AI Foundry Local integration**: In a future release, the AI backend may be updated to support AI Foundry Local, allowing for the users to run models locally.
 - Migrate from SQLite to SQL Server or PostgreSQL for production-grade scalability.
 - Add ASP.NET Core Identity or token-based authentication with password hashing.
 - Implement multi-user session isolation (per-user data scoping).
@@ -489,4 +481,4 @@ The AI Coach page in SmartBite will show a live connection status indicator — 
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/ZeroTrace0245/SmartBit/blob/master/docs/CONTRIBUTING.md) for the ownership quick-reference table and contributor details.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the ownership quick-reference table and contributor details.
