@@ -1,184 +1,377 @@
 @page "/dashboard"
 @using computer_project.Web.Models
+@using computer_project.Web.Services
 @inject SmartBiteApiClient ApiClient
+@inject UserSession Session
 @rendermode InteractiveServer
 
-<PageTitle>Dashboard</PageTitle>
+<PageTitle>Dashboard - SmartBite</PageTitle>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0">SmartBite Insights</h1>
-    <div class="text-muted small">Updated @DateTime.Now.ToShortTimeString()</div>
-</div>
-
-@if (report == null || goal == null)
-{
-    <div class="text-center py-5">
-        <div class="spinner-border text-primary" role="status"></div>
-        <p class="mt-2">Analyzing your nutrition data...</p>
-    </div>
-}
-else
-{
-    <div class="row g-4 mb-4">
-        <!-- Summary Cards -->
-        <div class="col-md-3">
-            <div class="card border-0">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-fire text-danger me-2"></i>
-                        <span class="text-muted small fw-bold text-uppercase">Calories</span>
-                    </div>
-                    <div class="h3 fw-bold">@report.TotalCalories.ToString("F0")</div>
-                    <div class="progress mt-3" style="height: 6px;">
-                        <div class="progress-bar bg-danger" style="width: @(GetPercent(report.TotalCalories, goal.TargetCalories))%"></div>
-                    </div>
-                    <div class="d-flex justify-content-between mt-1 small text-muted">
-                        <span>@(goal.TargetCalories - report.TotalCalories > 0 ? $"{(goal.TargetCalories - report.TotalCalories):F0} remaining" : "Goal reached")</span>
-                        <span>@goal.TargetCalories.ToString("F0") kcal</span>
-                    </div>
-                </div>
+<ConsumerOnly>
+    <div class="dashboard-header d-flex justify-content-between align-items-end mb-5">
+        <div>
+            <div class="breadcrumb-small mb-1 text-uppercase ls-widest fw-bold opacity-75">Analytics Overview</div>
+            <h1 class="display-6 fw-bold mb-0">Health Insights</h1>
+            <div class="text-muted small mt-1">
+                <i class="bi bi-geo-alt me-1"></i> @goal?.Region <span class="mx-2">|</span> 
+                <i class="bi bi-clock me-1"></i> @Session.ToLocalTime(DateTime.UtcNow).ToString("f")
             </div>
         </div>
-
-        <div class="col-md-3">
-            <div class="card border-0">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-water text-primary me-2"></i>
-                        <span class="text-muted small fw-bold text-uppercase">Water</span>
-                    </div>
-                    <div class="h3 fw-bold">@totalWater.ToString("F1") L</div>
-                    <div class="progress mt-3" style="height: 6px;">
-                        <div class="progress-bar bg-primary" style="width: @(GetPercent(totalWater, goal.TargetWater))%"></div>
-                    </div>
-                    <div class="d-flex justify-content-between mt-1 small text-muted">
-                        <span>@GetPercent(totalWater, goal.TargetWater).ToString("F0")% of daily goal</span>
-                        <span>@goal.TargetWater.ToString("F1") L</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card border-0">
-                <div class="card-body">
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-lightning-fill text-success me-2"></i>
-                        <span class="text-muted small fw-bold text-uppercase">Meals Logged</span>
-                    </div>
-                    <div class="h3 fw-bold">@report.MealCount</div>
-                    <p class="text-muted small mb-0 mt-3">Log at least 3 meals a day for accuracy.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-3">
-            <div class="card border-primary bg-primary text-white">
-                <div class="card-body">
-                    <div class="small fw-bold text-uppercase opacity-75 mb-2">Health Score</div>
-                    <div class="h3 fw-bold mb-0">84/100</div>
-                    <p class="small mt-2 mb-0">Great job! You are 12% above average this week.</p>
-                </div>
-            </div>
+        <div class="d-flex gap-3">
+            <button class="btn btn-light border btn-sm shadow-sm mica-effect px-3 py-2 rounded-3" @onclick="() => showShareOptions = true"><i class="bi bi-share me-2"></i>Share</button>
+            <a href="meals" class="btn btn-primary btn-sm shadow px-4 py-2 rounded-3"><i class="bi bi-plus-lg me-2"></i>Log Entry</a>
         </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Weekly Chart -->
-        <div class="col-lg-8">
-            <div class="card border-0 h-100">
-                <div class="card-body">
-                    <h5 class="card-title fw-bold mb-4">Calorie Intake (Last 7 Days)</h5>
-                    <div class="chart-bar-container">
-                        @foreach (var day in lastWeekData)
+    @if (showShareOptions)
+    {
+        <div class="modal d-block" style="background: rgba(0,0,0,0.5); z-index: 1050;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg mica-effect">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold">Share your Insights</h5>
+                        <button type="button" class="btn-close" @onclick="() => showShareOptions = false"></button>
+                    </div>
+                    <div class="modal-body p-4 text-center">
+                        <p class="text-muted small mb-4">Select a platform to share your daily health progress with your friends.</p>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <a href="https://www.facebook.com" target="_blank" class="btn btn-light w-100 p-3 rounded-4 transition-all d-flex flex-column align-items-center gap-2 border shadow-sm text-decoration-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#1877F2" viewBox="0 0 16 16"><path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951z"/></svg>
+                                    <span class="small fw-bold text-dark">Facebook</span>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="https://www.instagram.com" target="_blank" class="btn btn-light w-100 p-3 rounded-4 transition-all d-flex flex-column align-items-center gap-2 border shadow-sm text-decoration-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#E4405F" viewBox="0 0 16 16"><path d="M8 0C5.829 0 5.556.01 4.703.048 3.85.088 3.269.222 2.76.42a3.917 3.917 0 0 0-1.417.923A3.927 3.927 0 0 0 .42 2.76C.222 3.268.087 3.85.048 4.7.01 5.555 0 5.827 0 8.001c0 2.172.01 2.444.048 3.297.04.852.174 1.433.372 1.942.205.526.478.972.923 1.417.444.445.89.719 1.416.923.51.198 1.09.333 1.942.372C5.555 15.99 5.827 16 8 16s2.444-.01 3.298-.048c.851-.04 1.434-.174 1.943-.372a3.916 3.916 0 0 0 1.416-.923c.445-.445.718-.891.923-1.417.197-.509.332-1.09.372-1.942C15.99 10.445 16 10.173 16 8s-.01-2.445-.048-3.299c-.04-.851-.175-1.433-.372-1.941a3.926 3.926 0 0 0-.923-1.417A3.911 3.911 0 0 0 13.24.42c-.51-.198-1.092-.333-1.943-.372C10.443.01 10.172 0 7.998 0h.003zm-.717 1.442h.718c2.136 0 2.389.007 3.232.046.78.035 1.204.166 1.486.275.373.145.64.319.92.599.28.28.453.546.598.92.11.281.24.705.275 1.485.039.843.047 1.096.047 3.231s-.008 2.389-.047 3.232c-.035.78-.166 1.203-.275 1.485a2.47 2.47 0 0 1-.599.919c-.28.28-.546.453-.92.598-.28.11-.704.24-1.485.276-.843.038-1.096.047-3.232.047s-2.39-.009-3.233-.047c-.78-.036-1.203-.166-1.485-.276a2.478 2.478 0 0 1-.92-.598 2.48 2.48 0 0 1-.6-.92c-.109-.281-.24-.705-.275-1.485-.038-.843-.046-1.096-.046-3.233 0-2.136.008-2.388.046-3.231.036-.78.166-1.204.276-1.486.145-.373.319-.64.599-.92.28-.28.546-.453.92-.598.282-.11.705-.24 1.485-.276.738-.034 1.024-.044 2.515-.045v.002zm4.988 1.328a.96.96 0 1 0 0 1.92.96.96 0 0 0 0-1.92zm-4.27 1.122a4.109 4.109 0 1 0 0 8.217 4.109 4.109 0 0 0 0-8.217zm0 1.441a2.667 2.667 0 1 1 0 5.334 2.667 2.667 0 0 1 0-5.334z"/></svg>
+                                    <span class="small fw-bold text-dark">Instagram</span>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="https://x.com" target="_blank" class="btn btn-light w-100 p-3 rounded-4 transition-all d-flex flex-column align-items-center gap-2 border shadow-sm text-decoration-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#000000" viewBox="0 0 16 16"><path d="M12.685 5.806 15.665.5H14.13l-2.613 3.06L9.345.5H4.168l3.128 4.596L4.168 10.5h1.535l2.766-3.237 2.279 3.237h5.177l-3.24-4.764ZM10.22 9.576h-.705L5.783 4.14h.705l3.732 5.436Z"/></svg>
+                                    <span class="small fw-bold text-dark">X (Twitter)</span>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="https://web.whatsapp.com" target="_blank" class="btn btn-light w-100 p-3 rounded-4 transition-all d-flex flex-column align-items-center gap-2 border shadow-sm text-decoration-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="#25D366" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232z"/></svg>
+                                    <span class="small fw-bold text-dark">WhatsApp</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (report == null || goal == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Synchronizing your health data...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Top Summary Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="card p-4 border-0 shadow-sm hover-up">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small fw-bold mb-2 text-uppercase ls-wide">Energy</div>
+                            <div class="h2 fw-bold mb-1">@report.TotalCalories.ToString("N0") <span class="h6 text-muted fw-normal">kcal</span></div>
+                            <div class="growth-indicator text-success"><i class="bi bi-graph-up-arrow me-1"></i> +12%</div>
+                        </div>
+                        <div class="stat-card-icon bg-danger bg-opacity-10 text-danger rounded-4 shadow-sm" style="width: 56px; height: 56px;">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4 border-0 shadow-sm hover-up">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small fw-bold mb-2 text-uppercase ls-wide">Protein</div>
+                            <div class="h2 fw-bold mb-1">@(report.Protein / Math.Max(1, report.MealCount)).ToString("F1") <span class="h6 text-muted fw-normal">g</span></div>
+                            <div class="growth-indicator text-success"><i class="bi bi-graph-up-arrow me-1"></i> +5%</div>
+                        </div>
+                        <div class="stat-card-icon bg-success bg-opacity-10 text-success rounded-4 shadow-sm" style="width: 56px; height: 56px;">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4 border-0 shadow-sm hover-up">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small fw-bold mb-2 text-uppercase ls-wide">Hydration</div>
+                            <div class="h2 fw-bold mb-1">@totalWater.ToString("F1") <span class="h6 text-muted fw-normal">L</span></div>
+                            <div class="growth-indicator text-danger"><i class="bi bi-graph-down-arrow me-1"></i> -2%</div>
+                        </div>
+                        <div class="stat-card-icon bg-primary bg-opacity-10 text-primary rounded-4 shadow-sm" style="width: 56px; height: 56px;">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-4 border-0 shadow-sm hover-up">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <div class="text-muted small fw-bold mb-2 text-uppercase ls-wide">Fitness</div>
+                            <div class="h2 fw-bold mb-1">84<span class="h6 text-muted fw-normal">%</span></div>
+                            <div class="growth-indicator text-success"><i class="bi bi-stars me-1"></i> Peak</div>
+                        </div>
+                        <div class="stat-card-icon bg-warning bg-opacity-10 text-warning rounded-4 shadow-sm" style="width: 56px; height: 56px;">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Charts Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-8">
+                <div class="card border-0 p-4 h-100">
+                    <div class="d-flex justify-content-between mb-4">
+                        <h5 class="fw-bold m-0">Calorie Intake Trend</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-light border">Last 7 days <i class="bi bi-chevron-down ms-1"></i></button>
+                        </div>
+                    </div>
+                    <div class="chart-container-large position-relative">
+                        <svg width="100%" height="100%" viewBox="0 0 800 300" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stop-color="#0078d4" stop-opacity="0.3"/>
+                                    <stop offset="95%" stop-color="#0078d4" stop-opacity="0"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Grid lines -->
+                            @for (int i = 0; i <= 4; i++)
+                            {
+                                <line x1="0" y1="@(i * 75)" x2="800" y2="@(i * 75)" stroke="#f0f0f0" stroke-width="1" />
+                            }
+                            
+                            <!-- Smooth Area/Line Chart Path -->
+                            <path class="area-path" d="M0,300 L0,220 C100,200 200,280 300,240 C400,200 500,100 600,80 C700,60 800,90 800,90 L800,300 Z" />
+                            <path class="line-path" d="M0,220 C100,200 200,280 300,240 C400,200 500,100 600,80 C700,60 800,90 800,90" />
+                            
+                            <!-- Points -->
+                            <circle cx="300" cy="240" r="4" fill="#fff" stroke="#0078d4" stroke-width="2" />
+                            <circle cx="600" cy="80" r="4" fill="#fff" stroke="#0078d4" stroke-width="2" />
+                        </svg>
+                        <div class="d-flex justify-content-between mt-2 text-muted small">
+                            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-0 p-4 h-100">
+                    <h5 class="fw-bold mb-4">Macro Distribution</h5>
+                    <div class="donut-chart-box mb-4 py-4">
+                        <svg width="220" height="220" viewBox="0 0 42 42" class="chart-pie-svg filter-shadow">
+                            <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="var(--win11-bg)" stroke-width="6" opacity="0.1"></circle>
+                            
+                            @{
+                                double p = GetMacroPct(report.Protein, report.Carbs, report.Fat, "protein");
+                                double c = GetMacroPct(report.Protein, report.Carbs, report.Fat, "carbs");
+                                double f = GetMacroPct(report.Protein, report.Carbs, report.Fat, "fat");
+                            }
+
+                            <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#0078d4" stroke-width="7" 
+                                    stroke-dasharray="@($"{p} {100-p}")" stroke-dashoffset="25" stroke-linecap="round"></circle>
+                            
+                            <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#107c10" stroke-width="7" 
+                                    stroke-dasharray="@($"{c} {100-c}")" stroke-dashoffset="@(25 - p)" stroke-linecap="round"></circle>
+
+                            <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#d83b01" stroke-width="7" 
+                                    stroke-dasharray="@($"{f} {100-f}")" stroke-dashoffset="@(25 - p - c)" stroke-linecap="round"></circle>
+                        </svg>
+                        <div class="donut-label">
+                            <div class="h3 fw-bold mb-0">@((p+c+f > 0 ? 100 : 0))%</div>
+                            <div class="small text-muted text-uppercase ls-wide">Complete</div>
+                        </div>
+                    </div>
+                    <div class="small d-flex flex-column gap-3 mt-auto">
+                        <div class="d-flex justify-content-between align-items-center p-3 rounded-4 bg-light bg-opacity-10 border border-white border-opacity-10">
+                            <span class="d-flex align-items-center"><i class="bi bi-circle-fill text-primary me-3" style="font-size: 0.6rem;"></i>Protein</span>
+                            <span class="fw-bold">@p.ToString("F0")% <span class="text-muted fw-normal ms-1">(@report.Protein.ToString("F0")g)</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-3 rounded-4 bg-light bg-opacity-10 border border-white border-opacity-10">
+                            <span class="d-flex align-items-center"><i class="bi bi-circle-fill text-success me-3" style="font-size: 0.6rem;"></i>Carbs</span>
+                            <span class="fw-bold">@c.ToString("F0")% <span class="text-muted fw-normal ms-1">(@report.Carbs.ToString("F0")g)</span></span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-3 rounded-4 bg-light bg-opacity-10 border border-white border-opacity-10">
+                            <span class="d-flex align-items-center"><i class="bi bi-circle-fill text-danger me-3" style="font-size: 0.6rem;"></i>Fats</span>
+                            <span class="fw-bold">@f.ToString("F0")% <span class="text-muted fw-normal ms-1">(@report.Fat.ToString("F0")g)</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Data Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-lg-4">
+                <div class="card border-0 p-4 h-100">
+                    <h6 class="fw-bold mb-3">Daily Goals Progress</h6>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Calorie Limit</span>
+                            <span class="fw-bold">78%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-primary" style="width: 78%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Protein Target</span>
+                            <span class="fw-bold">52%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-success" style="width: 52%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span>Water Intake</span>
+                            <span class="fw-bold">66%</span>
+                        </div>
+                        <div class="progress" style="height: 6px;">
+                            <div class="progress-bar bg-info" style="width: 66%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-0 p-4 h-100">
+                    <div class="d-flex justify-content-between mb-3 align-items-center">
+                        <h6 class="fw-bold mb-0">Recent Meals</h6>
+                        <a href="meals" class="small text-primary text-decoration-none">View all</a>
+                    </div>
+                    <div class="activity-list mt-2">
+                        @foreach (var meal in recentMealsList.Take(4))
                         {
-                            <div class="chart-bar" style="height: @(day.Percent)%; background-color: @(day.IsToday ? "var(--win11-accent)" : "#d1d1d1")" 
-                                 title="@($"{day.Label}: {day.Value} kcal")">
+                            <div class="d-flex align-items-center gap-3 py-2 border-bottom border-light">
+                                <div class="bg-light p-2 rounded">
+                                    <i class="bi bi-egg text-primary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="small fw-bold">@meal.Name</div>
+                                    <div class="text-muted" style="font-size: 0.75rem;">@Session.ToLocalTime(meal.LoggedAt).ToShortTimeString()</div>
+                                </div>
+                                <div class="small fw-bold text-success">+@meal.Calories</div>
                             </div>
                         }
                     </div>
-                    <div class="d-flex justify-content-between mt-2 px-1">
-                        @foreach (var day in lastWeekData)
-                        {
-                            <span class="text-muted small" style="width: 40px; text-align: center;">@day.Label</span>
-                        }
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card border-0 p-4 h-100">
+                    <h6 class="fw-bold mb-3">Recent Activity</h6>
+                    <div class="activity-list small">
+                        <div class="activity-item">
+                            <div class="activity-icon bg-success bg-opacity-10 text-success"><i class="bi bi-check-lg"></i></div>
+                            <div>
+                                <div class="fw-bold">Goal Acheived</div>
+                                <div class="text-muted">Reached daily water target.</div>
+                            </div>
+                            <div class="ms-auto text-muted" style="font-size: 0.7rem;">2m</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-journal-plus"></i></div>
+                            <div>
+                                <div class="fw-bold">Meal Logged</div>
+                                <div class="text-muted">Chicken Salad (450 kcal)</div>
+                            </div>
+                            <div class="ms-auto text-muted" style="font-size: 0.7rem;">15m</div>
+                        </div>
+                        <div class="activity-item">
+                            <div class="activity-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-star"></i></div>
+                            <div>
+                                <div class="fw-bold">New Record</div>
+                                <div class="text-muted">Highest protein day this month.</div>
+                            </div>
+                            <div class="ms-auto text-muted" style="font-size: 0.7rem;">1h</div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <a href="#" class="small text-primary text-decoration-none">View all activity</a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Macro Breakdown -->
-        <div class="col-lg-4">
-            <div class="card border-0 h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title fw-bold mb-4 text-start">Macro Distribution</h5>
-                    
-                    <svg width="200" height="200" viewBox="0 0 42 42" class="chart-pie-svg mb-3">
-                        <circle class="hole" cx="21" cy="21" r="15.91549430918954" fill="#fff"></circle>
-                        <circle class="ring" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#d2d3d4" stroke-width="3"></circle>
-                        
-                        @{
-                            double proteinPct = GetMacroPct(report.Protein, report.Carbs, report.Fat, "protein");
-                            double carbsPct = GetMacroPct(report.Protein, report.Carbs, report.Fat, "carbs");
-                            double fatPct = GetMacroPct(report.Protein, report.Carbs, report.Fat, "fat");
-                        }
-
-                        <circle class="segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#198754" stroke-width="3" 
-                                stroke-dasharray="@($"{proteinPct} {100-proteinPct}")" stroke-dashoffset="25"></circle>
-                        
-                        <circle class="segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#ffc107" stroke-width="3" 
-                                stroke-dasharray="@($"{carbsPct} {100-carbsPct}")" stroke-dashoffset="@(25 - proteinPct)"></circle>
-
-                        <circle class="segment" cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#dc3545" stroke-width="3" 
-                                stroke-dasharray="@($"{fatPct} {100-fatPct}")" stroke-dashoffset="@(25 - proteinPct - carbsPct)"></circle>
-                    </svg>
-
-                    <div class="d-flex flex-column gap-2 text-start mt-2">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-circle-fill text-success small me-1"></i> Protein</span>
-                            <span class="fw-bold">@report.Protein.ToString("F0")g</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-circle-fill text-warning small me-1"></i> Carbs</span>
-                            <span class="fw-bold">@report.Carbs.ToString("F0")g</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span><i class="bi bi-circle-fill text-danger small me-1"></i> Fat</span>
-                            <span class="fw-bold">@report.Fat.ToString("F0")g</span>
-                        </div>
-                    </div>
-                </div>
+        <!-- Quick Actions -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-3 col-6">
+                <button class="quick-action-btn shadow-sm">
+                    <div class="bg-primary bg-opacity-10 text-primary p-2 rounded-circle"><i class="bi bi-plus-circle"></i></div>
+                    <div class="small fw-bold">New Meal</div>
+                </button>
+            </div>
+            <div class="col-md-3 col-6">
+                <button class="quick-action-btn shadow-sm">
+                    <div class="bg-info bg-opacity-10 text-info p-2 rounded-circle"><i class="bi bi-droplet"></i></div>
+                    <div class="small fw-bold">Log Water</div>
+                </button>
+            </div>
+            <div class="col-md-3 col-6">
+                <button class="quick-action-btn shadow-sm">
+                    <div class="bg-success bg-opacity-10 text-success p-2 rounded-circle"><i class="bi bi-cart"></i></div>
+                    <div class="small fw-bold">Shopping</div>
+                </button>
+            </div>
+            <div class="col-md-3 col-6">
+                <button class="quick-action-btn shadow-sm">
+                    <div class="bg-secondary bg-opacity-10 text-secondary p-2 rounded-circle"><i class="bi bi-file-earmark-text"></i></div>
+                    <div class="small fw-bold">Reports</div>
+                </button>
             </div>
         </div>
-    </div>
-}
+    }
+</ConsumerOnly>
 
 @code {
     private HealthReport? report;
     private UserGoal? goal;
     private double totalWater;
-
-    private List<ChartData> lastWeekData = new();
+    private List<Meal> recentMealsList = new();
+    private bool showShareOptions = false;
 
     protected override async Task OnInitializedAsync()
     {
-        report = await ApiClient.GetReportAsync();
-        goal = await ApiClient.GetGoalAsync(1);
-        
-        var waterLogs = await ApiClient.GetWaterIntakesAsync();
-        totalWater = waterLogs.Where(i => i.LoggedAt.Date == DateTime.UtcNow.Date).Sum(i => i.Amount);
-
-        // Mock data for weekly chart
-        lastWeekData = new List<ChartData>
+        var reportTask = ApiClient.GetReportAsync().ContinueWith(t => t.IsFaulted ? new HealthReport
         {
-            new("Mon", 1800, 2000),
-            new("Tue", 2100, 2000),
-            new("Wed", 1950, 2000),
-            new("Thu", 1700, 2000),
-            new("Fri", 2300, 2000),
-            new("Sat", 2500, 2000),
-            new("Today", (int)report.TotalCalories, (int)(goal?.TargetCalories ?? 2000), true)
-        };
+            UserId = 1,
+            Summary = "AI summary unavailable — start AI Foundry Local for insights.",
+            GeneratedAt = DateTime.UtcNow
+        } : t.Result, TaskContinuationOptions.ExecuteSynchronously);
+
+        var goalTask = ApiClient.GetGoalAsync(1);
+        var waterTask = ApiClient.GetWaterIntakesAsync();
+        var mealsTask = ApiClient.GetMealsAsync();
+
+        await Task.WhenAll(reportTask, goalTask, waterTask, mealsTask);
+
+        report = await reportTask;
+        try { goal = await goalTask; } catch { }
+        try
+        {
+            var waterLogs = await waterTask;
+            totalWater = waterLogs.Where(i => i.LoggedAt.Date == DateTime.UtcNow.Date).Sum(i => i.Amount);
+        }
+        catch { }
+        try { recentMealsList = await mealsTask ?? new(); } catch { }
     }
 
     private double GetPercent(double val, double target) => target > 0 ? Math.Min(100, (val / target) * 100) : 0;
@@ -186,7 +379,7 @@ else
     private double GetMacroPct(double p, double c, double f, string type)
     {
         double total = p + c + f;
-        if (total == 0) return 33.3; // Default split if no data
+        if (total == 0) return 33.3; 
         return type switch
         {
             "protein" => (p / total) * 100,
@@ -194,22 +387,6 @@ else
             "fat" => (f / total) * 100,
             _ => 0
         };
-    }
-
-    private class ChartData
-    {
-        public string Label { get; }
-        public int Value { get; }
-        public double Percent { get; }
-        public bool IsToday { get; }
-
-        public ChartData(string label, int val, int target, bool isToday = false)
-        {
-            Label = label;
-            Value = val;
-            Percent = Math.Min(100, (val / (double)target) * 100);
-            IsToday = isToday;
-        }
     }
 }
 

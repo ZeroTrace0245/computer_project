@@ -1,104 +1,130 @@
 @page "/meals"
 @using computer_project.Web.Models
+@using computer_project.Web.Services
 @inject SmartBiteApiClient ApiClient
+@inject UserSession Session
+@inject IJSRuntime JS
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>Meal Logging</PageTitle>
 
-<h1>Meal History</h1>
+<ConsumerOnly>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">Meal History</h1>
+        @if (meals != null && meals.Any())
+        {
+            <button class="btn btn-outline-light btn-sm px-3 py-2 rounded-3" @onclick="ExportCsv">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Export CSV
+            </button>
+        }
+    </div>
 
-<div class="card mb-4">
-    <div class="card-body p-4">
-        <h5 class="mb-3">Log New Meal</h5>
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label small fw-bold">Meal Name</label>
-                <input class="form-control" @bind="newMealName" placeholder="e.g. Chicken Salad" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold">Calories</label>
-                <input type="number" class="form-control" @bind="newMealCalories" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold">Protein (g)</label>
-                <input type="number" class="form-control" @bind="newProtein" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold">Carbs (g)</label>
-                <input type="number" class="form-control" @bind="newCarbs" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label small fw-bold">Fat (g)</label>
-                <input type="number" class="form-control" @bind="newFat" />
-            </div>
-            <div class="col-12 text-end mt-4">
-                <button class="btn btn-primary px-4" @onclick="AddMeal">Log Meal</button>
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <h5 class="mb-3">Log New Meal</h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label small fw-bold">Meal Name</label>
+                    <input class="form-control" @bind="newMealName" placeholder="e.g. Chicken Salad" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Calories</label>
+                    <input type="number" class="form-control" @bind="newMealCalories" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Protein (g)</label>
+                    <input type="number" class="form-control" @bind="newProtein" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Carbs (g)</label>
+                    <input type="number" class="form-control" @bind="newCarbs" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label small fw-bold">Fat (g)</label>
+                    <input type="number" class="form-control" @bind="newFat" />
+                </div>
+                <div class="col-12 text-end mt-4">
+                    <button class="btn btn-primary px-4" @onclick="AddMeal">Log Meal</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<div class="card">
-    <div class="card-body p-0">
-        @if (meals == null)
-        {
-            <div class="p-4 text-center">
-                <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
-                <span class="ms-2">Loading logs...</span>
-            </div>
-        }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th class="ps-4">Date</th>
-                            <th>Meal</th>
-                            <th>Calories</th>
-                            <th>Macros (P|C|F)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var meal in meals)
-                        {
+    <div class="card">
+        <div class="card-body p-0">
+            @if (meals == null)
+            {
+                <div class="p-4 text-center">
+                    <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                    <span class="ms-2">Loading logs...</span>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <td class="ps-4 text-muted small">@meal.LoggedAt.ToShortDateString()</td>
-                                <td class="fw-bold">@meal.Name</td>
-                                <td>@meal.Calories kcal</td>
-                                <td>
-                                    <span class="badge bg-light text-dark border">P: @meal.Protein g</span>
-                                    <span class="badge bg-light text-dark border">C: @meal.Carbs g</span>
-                                    <span class="badge bg-light text-dark border">F: @meal.Fat g</span>
-                                </td>
+                                <th class="ps-4">Date</th>
+                                <th>Meal</th>
+                                <th>Calories</th>
+                                <th>Macros (P|C|F)</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
+                        </thead>
+                        <tbody>
+                            @foreach (var meal in FilteredMeals)
+                            {
+                                <tr>
+                                    <td class="ps-4 text-muted small">@Session.ToLocalTime(meal.LoggedAt).ToString("g")</td>
+                                    <td class="fw-bold">@meal.Name</td>
+                                    <td>@meal.Calories kcal</td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">P: @meal.Protein g</span>
+                                        <span class="badge bg-light text-dark border">C: @meal.Carbs g</span>
+                                        <span class="badge bg-light text-dark border">F: @meal.Fat g</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
     </div>
-</div>
+</ConsumerOnly>
 
 @code {
-private List<Meal>? meals;
-private string newMealName = "";
-private double newMealCalories;
-private double newProtein;
-private double newCarbs;
-private double newFat;
+    private List<Meal>? meals;
+    private string newMealName = "";
+    private double newMealCalories;
+    private double newProtein;
+    private double newCarbs;
+    private double newFat;
 
-protected override async Task OnInitializedAsync()
-{
-    await LoadMeals();
-}
+    private IEnumerable<Meal> FilteredMeals => meals?
+        .Where(m => string.IsNullOrWhiteSpace(Session.SearchQuery) || 
+                    m.Name.Contains(Session.SearchQuery, StringComparison.OrdinalIgnoreCase)) ?? 
+        Enumerable.Empty<Meal>();
 
-private async Task LoadMeals()
-{
-    meals = await ApiClient.GetMealsAsync();
-}
+    protected override async Task OnInitializedAsync()
+    {
+        Session.OnChange += StateHasChanged;
+        await LoadMeals();
+    }
 
-private async Task AddMeal()
+    public void Dispose()
+    {
+        Session.OnChange -= StateHasChanged;
+    }
+
+    private async Task LoadMeals()
+    {
+        meals = await ApiClient.GetMealsAsync();
+    }
+
+    private async Task AddMeal()
     {
         if (string.IsNullOrWhiteSpace(newMealName)) return;
 
@@ -120,5 +146,22 @@ private async Task AddMeal()
         newCarbs = 0;
         newFat = 0;
         await LoadMeals();
+    }
+
+    private async Task ExportCsv()
+    {
+        if (meals == null || !meals.Any()) return;
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Date,Meal,Calories,Protein (g),Carbs (g),Fat (g)");
+        foreach (var meal in FilteredMeals)
+        {
+            var date = Session.ToLocalTime(meal.LoggedAt).ToString("g");
+            var name = meal.Name.Replace("\"", "\"\"");
+            csv.AppendLine($"\"{date}\",\"{name}\",{meal.Calories},{meal.Protein},{meal.Carbs},{meal.Fat}");
+        }
+
+        var fileName = $"MealHistory_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
+        await JS.InvokeVoidAsync("downloadFile", fileName, csv.ToString());
     }
 }

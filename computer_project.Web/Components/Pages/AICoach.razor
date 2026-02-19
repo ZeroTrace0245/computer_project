@@ -1,0 +1,197 @@
+@page "/ai"
+@using computer_project.Web.Models
+@using computer_project.Web.Services
+@inject SmartBiteApiClient ApiClient
+@inject UserSession Session
+@rendermode InteractiveServer
+
+<PageTitle>AI Coach - SmartBite</PageTitle>
+
+<ConsumerOnly>
+    <div class="container py-4">
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div class="bg-primary bg-opacity-25 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width:48px; height:48px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 14H8a4 4 0 0 0-4 4v2h16v-2a4 4 0 0 0-4-4z"/><circle cx="12" cy="6" r="1"/></svg>
+            </div>
+            <div>
+                <h1 class="display-6 fw-bold mb-0">AI Health Coach</h1>
+                <div class="text-muted small">Powered by AI Foundry Local — runs entirely on your machine</div>
+            </div>
+        </div>
+
+        @* --- Warning Banner (always visible) --- *@
+        <div class="alert border-0 shadow-sm mb-4" style="background: rgba(255, 193, 7, 0.15); border-left: 4px solid #ffc107 !important;">
+            <div class="d-flex align-items-start gap-3">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="flex-shrink-0 mt-1"><path d="M10.29 3.86 1.82 18a1 1 0 0 0 .86 1.5h18.64a1 1 0 0 0 .86-1.5L13.71 3.86a1 1 0 0 0-1.72 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                <div>
+                    <h6 class="fw-bold mb-1" style="color: #ffc107;">AI Foundry Local Required</h6>
+                    <p class="mb-2 small" style="color: rgba(255,255,255,0.8);">
+                        This feature uses <strong>AI Foundry Local</strong> to run AI models entirely on your device.
+                        <strong>No cloud services or API keys are needed</strong> — all processing stays on your machine.
+                    </p>
+                    <div class="small" style="color: rgba(255,255,255,0.7);">
+                        <strong>Setup steps:</strong>
+                        <ol class="mb-0 mt-1 ps-3">
+                            <li>Install <strong>AI Foundry Local</strong> from <a href="https://github.com/microsoft/ai-foundry-local" target="_blank" class="text-info">github.com/microsoft/ai-foundry-local</a></li>
+                            <li>Download a model: <code>foundry model download phi-3.5-mini</code></li>
+                            <li>Open a <strong>separate PowerShell window</strong> and run: <code>foundry model run phi-3.5-mini</code></li>
+                            <li>
+                                Note the IP and port from the output line:<br />
+                                <code class="text-info">Service is Started on http://127.0.0.1:XXXXX/</code>
+                            </li>
+                            <li>
+                                Open <code>computer_project.ApiService/appsettings.json</code> and make sure the <strong>Endpoint</strong> matches:<br />
+                                <code class="text-info">"Endpoint": "http://127.0.0.1:XXXXX"</code>
+                            </li>
+                            <li>Restart the solution after updating the endpoint</li>
+                        </ol>
+                    </div>
+                    <div class="mt-2 small" style="color: rgba(255,255,255,0.6);">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        <strong>Important:</strong> The port changes every time Foundry starts. Always check the port and update <code>appsettings.json</code> if needed.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* --- Connection Status --- *@
+        <div class="card border-0 shadow-sm mb-4 p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    @if (isChecking)
+                    {
+                        <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                        <span class="small">Checking AI Foundry Local connection...</span>
+                    }
+                    else if (isAIOnline)
+                    {
+                        <span class="badge rounded-pill bg-success px-3 py-2">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="me-1"><polyline points="20 6 9 17 4 12"/></svg>
+                            Connected
+                        </span>
+                        <span class="small text-muted">AI Foundry Local is running — model: <strong>phi-3.5-mini</strong></span>
+                    }
+                    else
+                    {
+                        <span class="badge rounded-pill bg-danger px-3 py-2">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="me-1"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            Offline
+                        </span>
+                        <span class="small text-muted">AI Foundry Local is not running. Start it with <code>foundry service start</code></span>
+                    }
+                </div>
+                <button class="btn btn-sm btn-outline-light" @onclick="CheckAIStatus" disabled="@isChecking">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                </button>
+            </div>
+        </div>
+
+        @if (isAIOnline)
+        {
+            @* --- Chat Interface --- *@
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Ask your AI Coach</h5>
+                    <p class="text-muted small mb-4">Ask about nutrition, meal suggestions, calorie estimates, or health tips. Everything runs locally on your device.</p>
+
+                    <div class="chat-messages mb-4" style="max-height: 400px; overflow-y: auto;">
+                        @foreach (var msg in chatMessages)
+                        {
+                            <div class="d-flex gap-3 mb-3 @(msg.IsUser ? "justify-content-end" : "")">
+                                @if (!msg.IsUser)
+                                {
+                                    <div class="bg-primary bg-opacity-25 text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px; font-size:14px;">AI</div>
+                                }
+                                <div class="p-3 rounded-4 @(msg.IsUser ? "bg-primary text-white" : "card border-0")" style="max-width: 75%;">
+                                    <div class="small" style="white-space: pre-wrap;">@msg.Text</div>
+                                </div>
+                                @if (msg.IsUser)
+                                {
+                                    <div class="bg-secondary bg-opacity-25 text-secondary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px; font-size:14px;">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @if (isThinking)
+                        {
+                            <div class="d-flex gap-3 mb-3">
+                                <div class="bg-primary bg-opacity-25 text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px; height:32px; font-size:14px;">AI</div>
+                                <div class="p-3 rounded-4 card border-0">
+                                    <div class="small text-muted">
+                                        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                        Thinking...
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <input class="form-control" placeholder="e.g. Suggest a high-protein breakfast under 400 calories" @bind="userPrompt" @onkeydown="HandleKeyDown" disabled="@isThinking" />
+                        <button class="btn btn-primary px-4" @onclick="SendMessage" disabled="@(isThinking || string.IsNullOrWhiteSpace(userPrompt))">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</ConsumerOnly>
+
+@code {
+    private bool isChecking = true;
+    private bool isAIOnline = false;
+    private bool isThinking = false;
+    private string userPrompt = "";
+    private List<ChatMessage> chatMessages = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckAIStatus();
+    }
+
+    private async Task CheckAIStatus()
+    {
+        isChecking = true;
+        StateHasChanged();
+        isAIOnline = await ApiClient.IsAIOnlineAsync();
+        isChecking = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleKeyDown(Microsoft.AspNetCore.Components.Web.KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !isThinking && !string.IsNullOrWhiteSpace(userPrompt))
+        {
+            await SendMessage();
+        }
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(userPrompt) || isThinking) return;
+
+        var question = userPrompt.Trim();
+        userPrompt = "";
+        chatMessages.Add(new ChatMessage(question, true));
+        isThinking = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await ApiClient.GetAICoachAdviceAsync(question);
+            chatMessages.Add(new ChatMessage(response, false));
+        }
+        catch
+        {
+            chatMessages.Add(new ChatMessage("Could not reach AI. Make sure AI Foundry Local is running.", false));
+        }
+
+        isThinking = false;
+        StateHasChanged();
+    }
+
+    private record ChatMessage(string Text, bool IsUser);
+}

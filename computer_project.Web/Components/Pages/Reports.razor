@@ -1,59 +1,154 @@
 @page "/reports"
 @using computer_project.Web.Models
 @inject SmartBiteApiClient ApiClient
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Health Reports</PageTitle>
 
-<h1>Health Reports</h1>
-
-<p>Analyze your progress and export your health data.</p>
-
-<div class="alert alert-info">
-    <strong>Alpha Feature:</strong> Reports are currently generated based on your login history and nutrition intake.
-</div>
-
-@if (report == null)
-{
-    <p><em>Generating reports...</em></p>
-}
-else
-{
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Daily Nutritional Summary - @report.GeneratedAt.ToShortDateString()</h5>
+<ConsumerOnly>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-1">Performance & Analytics</h1>
+            <p class="text-muted">Analyze your progress and export your health data.</p>
         </div>
-        <div class="card-body">
-            <div class="row text-center">
-                <div class="col">
-                    <h6>Calories</h6>
-                    <p class="h4">@report.TotalCalories</p>
-                </div>
-                <div class="col">
-                    <h6>Protein</h6>
-                    <p class="h4">@report.Protein g</p>
-                </div>
-                <div class="col">
-                    <h6>Carbs</h6>
-                    <p class="h4">@report.Carbs g</p>
-                </div>
-                <div class="col">
-                    <h6>Fat</h6>
-                    <p class="h4">@report.Fat g</p>
+        <button class="btn btn-dark shadow-sm d-flex align-items-center gap-2 px-4 py-2 rounded-pill glow-btn" @onclick="ExtractCSV">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Extract (CSV)</span>
+        </button>
+    </div>
+
+    @if (report == null || meals == null)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">Analyzing your data...</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4 mb-4">
+            <div class="col-md-12">
+                <div class="card border-0 shadow-sm mica-effect">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                        <h5 class="fw-bold mb-0">Daily Summary - @report.GeneratedAt.ToShortDateString()</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row text-center g-4">
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light bg-opacity-10 rounded-4">
+                                    <div class="text-muted small text-uppercase fw-bold mb-1">Calories</div>
+                                    <div class="h3 fw-bold mb-0 text-primary">@report.TotalCalories.ToString("N0")</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light bg-opacity-10 rounded-4">
+                                    <div class="text-muted small text-uppercase fw-bold mb-1">Protein</div>
+                                    <div class="h3 fw-bold mb-0 text-success">@report.Protein.ToString("N1")g</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light bg-opacity-10 rounded-4">
+                                    <div class="text-muted small text-uppercase fw-bold mb-1">Carbs</div>
+                                    <div class="h3 fw-bold mb-0 text-info">@report.Carbs.ToString("N1")g</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="p-3 bg-light bg-opacity-10 rounded-4">
+                                    <div class="text-muted small text-uppercase fw-bold mb-1">Fat</div>
+                                    <div class="h3 fw-bold mb-0 text-warning">@report.Fat.ToString("N1")g</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="row g-3">
+                                @foreach (var tip in tips)
+                                {
+                                    <div class="col-md-4">
+                                        <div class="p-3 h-100 bg-primary bg-opacity-10 border border-primary border-opacity-10 rounded-3">
+                                            <div class="d-flex gap-2">
+                                                <i class="bi bi-lightbulb-fill text-primary"></i>
+                                                <p class="mb-0 small fw-semibold">@tip</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <hr />
-            <p><strong>Status:</strong> Based on @report.MealCount meals logged today.</p>
+
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                        <h5 class="fw-bold mb-0">Recent Meals Log</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light bg-opacity-50">
+                                    <tr class="small text-muted text-uppercase">
+                                        <th class="ps-4">Meal Name</th>
+                                        <th>Calories</th>
+                                        <th>Protein</th>
+                                        <th>Carbs</th>
+                                        <th>Fat</th>
+                                        <th class="pe-4">Logged At</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var meal in meals.Take(10))
+                                    {
+                                        <tr>
+                                            <td class="ps-4 fw-bold">@meal.Name</td>
+                                            <td>@meal.Calories kcal</td>
+                                            <td>@meal.Protein g</td>
+                                            <td>@meal.Carbs g</td>
+                                            <td>@meal.Fat g</td>
+                                            <td class="pe-4 text-muted small">@meal.LoggedAt.ToString("g")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-    </div>
-}
+    }
+</ConsumerOnly>
 
 @code {
     private HealthReport? report;
+    private List<Meal>? meals;
+    private readonly string[] tips = new[]
+    {
+        "Front load protein at breakfast to stay full longer.",
+        "Sip water steadily aim for 250ml every hour you’re awake.",
+        "Batch prep a veggie lean protein combo twice a week."
+    };
 
     protected override async Task OnInitializedAsync()
     {
         report = await ApiClient.GetReportAsync();
+        meals = await ApiClient.GetMealsAsync();
+    }
+
+    private async Task ExtractCSV()
+    {
+        if (meals == null || report == null) return;
+
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Type,Name,Calories,Protein,Carbs,Fat,Date");
+        csv.AppendLine($"Summary,Daily Total,{report.TotalCalories},{report.Protein},{report.Carbs},{report.Fat},{report.GeneratedAt:yyyy-MM-dd}");
+
+        foreach (var meal in meals)
+        {
+            csv.AppendLine($"Meal,{meal.Name},{meal.Calories},{meal.Protein},{meal.Carbs},{meal.Fat},{meal.LoggedAt:yyyy-MM-dd HH:mm}");
+        }
+
+        await JS.InvokeVoidAsync("downloadFile", $"SmartBite_Export_{DateTime.Now:yyyyMMdd}.csv", csv.ToString());
     }
 }
 

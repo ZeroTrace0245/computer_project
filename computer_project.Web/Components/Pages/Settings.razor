@@ -12,118 +12,192 @@
     <div class="col-lg-8">
         <h1 class="mb-4">Settings</h1>
 
-        <!-- Account Section -->
-        <div class="mb-5">
-            <h5 class="fw-bold mb-3"><i class="bi bi-person me-2 text-primary"></i> Account Profile</h5>
-            <div class="card border-0">
-                <div class="card-body p-4">
-                    <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                        <div>
-                            <div class="fw-bold">Username</div>
-                            <div class="text-muted small">Your unique identifier in SmartBite.</div>
-                        </div>
-                        <div class="fw-bold fs-5">@Session.CurrentUser?.Username</div>
-                    </div>
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <div class="fw-bold">Account Session</div>
-                            <div class="text-muted small">Sign out from your current device.</div>
-                        </div>
-                        <button class="btn btn-outline-danger btn-sm" @onclick="HandleLogout">Sign Out</button>
+        @if (Session.IsAdmin)
+        {
+            <!-- Admin User Management Section -->
+            <div class="mb-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-people-fill me-2 text-danger"></i> User Management</h5>
+                    <span class="badge bg-danger rounded-pill">@allUsers?.Count Users Registered</span>
+                </div>
+                <div class="card border-0">
+                    <div class="card-body p-0">
+                        @if (allUsers == null)
+                        {
+                            <div class="p-4 text-center">
+                                <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                                <span class="ms-2">Loading user data...</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead>
+                                        <tr class="small text-muted text-uppercase">
+                                            <th class="ps-4">Username</th>
+                                            <th>Role</th>
+                                            <th class="text-end pe-4">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var user in allUsers)
+                                        {
+                                            <tr>
+                                                <td class="ps-4">
+                                                    <div class="fw-bold">@user.Username</div>
+                                                    <div class="text-muted small">ID: @user.Id</div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge @(user.Role == "Admin" ? "bg-primary" : "bg-light text-dark border")">@user.Role</span>
+                                                </td>
+                                                <td class="text-end pe-4">
+                                                    @if (user.Id != Session.CurrentUser?.Id)
+                                                    {
+                                                        <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => EditUser(user)" title="Record User Action"><i class="bi bi-pencil"></i></button>
+                                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteUser(user.Id)" title="Remove Logged User"><i class="bi bi-person-x-fill"></i></button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted small me-2">(You)</span>
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Goals Section -->
-        <div class="mb-5">
-            <h5 class="fw-bold mb-3"><i class="bi bi-bullseye me-2 text-danger"></i> Nutrition Goals</h5>
-            @if (goal == null)
-            {
-                <div class="card border-0 p-4">Loading your goals...</div>
-            }
-            else
-            {
+            <!-- App Telemetry Section -->
+            <div class="mb-5">
+                <h5 class="fw-bold mb-3"><i class="bi bi-speedometer2 me-2 text-info"></i> System Telemetry</h5>
                 <div class="card border-0">
                     <div class="card-body p-4">
                         <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Daily Calorie Target</label>
-                                <div class="input-group">
-                                    <input type="number" class="form-control" @bind="goal.TargetCalories" />
-                                    <span class="input-group-text">kcal</span>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded-3 text-center">
+                                    <div class="small text-muted mb-1 text-uppercase">API Status</div>
+                                    <div class="h4 fw-bold text-success mb-0">Operational</div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Daily Water Target</label>
-                                <div class="input-group">
-                                    <input type="number" step="0.5" class="form-control" @bind="goal.TargetWater" />
-                                    <span class="input-group-text">Liters</span>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded-3 text-center">
+                                    <div class="small text-muted mb-1 text-uppercase">Avg Latency</div>
+                                    <div class="h4 fw-bold mb-0">84ms</div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="text-end mt-4">
-                            <button class="btn btn-primary" @onclick="SaveGoals">
-                                @if (isSaving)
-                                {
-                                    <span class="spinner-border spinner-border-sm" role="status"></span>
-                                }
-                                Save Changes
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-
-        <!-- Preferences Section -->
-        <div class="mb-5">
-            <h5 class="fw-bold mb-3"><i class="bi bi-sliders me-2 text-success"></i> Application Preferences</h5>
-            <div class="card border-0">
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush rounded">
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
-                            <div>
-                                <div class="fw-bold">Dark Mode</div>
-                                <div class="text-muted small">Follow system appearance settings</div>
+                            <div class="col-md-4">
+                                <div class="p-3 bg-light rounded-3 text-center">
+                                    <div class="small text-muted mb-1 text-uppercase">Active Sessions</div>
+                                    <div class="h4 fw-bold mb-0">3 Active</div>
+                                </div>
                             </div>
-                            <div class="form-check form-switch fs-4">
-                                <input class="form-check-input" type="checkbox" role="switch">
-                            </div>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
-                            <div>
-                                <div class="fw-bold">Notifications</div>
-                                <div class="text-muted small">Get reminders to log water and meals</div>
-                            </div>
-                            <div class="form-check form-switch fs-4">
-                                <input class="form-check-input" type="checkbox" role="switch" checked>
-                            </div>
-                        </div>
-                        <div class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
-                            <div>
-                                <div class="fw-bold">Measurement Unit</div>
-                                <div class="text-muted small">Switch between Metric and Imperial</div>
-                            </div>
-                            <select class="form-select w-auto">
-                                <option>Metric (g, L)</option>
-                                <option>Imperial (oz, ml)</option>
-                            </select>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            @if (editingUser != null)
+            {
+                <div class="modal d-block" style="background: rgba(0,0,0,0.5)">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow mica-effect">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold">Edit User</h5>
+                                <button type="button" class="btn-close" @onclick="() => editingUser = null"></button>
+                            </div>
+                            <div class="modal-body p-4">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Username</label>
+                                    <input class="form-control" @bind="editingUser.Username" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold">Role</label>
+                                    <select class="form-select" @bind="editingUser.Role">
+                                        <option value="EndUser">EndUser</option>
+                                        <option value="Admin">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="modal-footer border-0 pt-0">
+                                <button type="button" class="btn btn-light" @onclick="() => editingUser = null">Cancel</button>
+                                <button type="button" class="btn btn-primary" @onclick="SaveUserEdit">Save Changes</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="card border-0 shadow-sm p-5 text-center fade-in">
+                <div class="mb-4">
+                    <i class="bi bi-lock-fill display-1 text-muted opacity-25"></i>
+                </div>
+                <h2 class="fw-bold">Administrative Access Only</h2>
+                <p class="text-muted lead px-lg-5">Regular users do not have permissions to access the system settings. Please contact your system administrator for assistance.</p>
+                <div class="mt-4">
+                    <a href="/" class="btn btn-outline-primary px-4">Back to Home</a>
+                </div>
+            </div>
+        }
     </div>
 </div>
 
 @code {
     private UserGoal? goal;
     private bool isSaving = false;
+    private List<User>? allUsers;
+    private User? editingUser;
 
     protected override async Task OnInitializedAsync()
     {
         goal = await ApiClient.GetGoalAsync(1);
+        if (goal != null)
+        {
+            Session.TimeZoneId = goal.TimeZoneId;
+            Session.SetTheme(goal.IsDarkMode);
+        }
+
+        if (Session.IsAdmin)
+        {
+            await LoadUsers();
+        }
+    }
+
+    private async Task LoadUsers()
+    {
+        allUsers = await ApiClient.GetUsersAsync();
+    }
+
+    private void EditUser(User user)
+    {
+        editingUser = new User { Id = user.Id, Username = user.Username, Role = user.Role };
+    }
+
+    private async Task SaveUserEdit()
+    {
+        if (editingUser == null) return;
+        await ApiClient.UpdateUserAsync(editingUser);
+        editingUser = null;
+        await LoadUsers();
+    }
+
+    private async Task DeleteUser(int userId)
+    {
+        await ApiClient.DeleteUserAsync(userId);
+        await LoadUsers();
+    }
+
+    private async Task ToggleTheme(ChangeEventArgs e)
+    {
+        var isDark = (bool)(e.Value ?? false);
+        Session.SetTheme(isDark);
+        if (goal != null) goal.IsDarkMode = isDark;
     }
 
     private async Task SaveGoals()
@@ -133,6 +207,7 @@
         try
         {
             await ApiClient.UpdateGoalAsync(goal);
+            Session.TimeZoneId = goal.TimeZoneId;
         }
         finally
         {

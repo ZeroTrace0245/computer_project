@@ -1,15 +1,54 @@
 ﻿@page "/"
+@using computer_project.Web.Services
+@inject UserSession Session
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
 
 <PageTitle>SmartBite - Diet & Shopping</PageTitle>
 
 <div class="container text-center mt-5 py-5">
-    <h1 class="display-3 fw-bold">SmartBite</h1>
-    <p class="lead text-muted mb-5">Automate diet tracking, monitor calories, and manage your shopping list with ease.</p>
-
+    <h1 class="display-3 fw-bold hero-title">SmartBite</h1>
+    <p class="lead mb-5 hero-subtitle">Automate diet tracking, monitor calories, and manage your shopping list with ease.</p>
+    
     <div class="d-flex justify-content-center gap-3 mb-5">
-        <a href="register" class="btn btn-primary btn-lg px-5 shadow">Get Started Free</a>
-        <a href="login" class="btn btn-outline-secondary btn-lg px-5">Sign In</a>
+        @if (Session.IsLoggedIn)
+        {
+            <div class="text-center">
+                <p class="small fw-bold mb-3">Logged in as @Session.CurrentUser?.Username</p>
+                <div class="d-flex gap-2 justify-content-center">
+                    <a href="dashboard" class="btn btn-primary btn-lg px-5 shadow d-flex align-items-center justify-content-center glow-btn">Go to Dashboard</a>
+                    <button class="btn btn-outline-danger btn-lg px-5 border-2 fw-bold glow-btn" @onclick="HandleLogout">Sign Out</button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <a href="register" class="btn btn-primary btn-lg px-5 shadow d-flex align-items-center justify-content-center glow-btn">Get Started Free</a>
+            <div class="d-flex flex-column gap-2">
+                <a href="login" class="btn btn-outline-secondary btn-lg px-5 glow-btn">Sign In</a>
+                <button class="btn btn-dark btn-sm opacity-75" @onclick="() => showAdminConfirm = true">Admin Sign In</button>
+            </div>
+        }
     </div>
+
+    @if (showAdminConfirm)
+    {
+        <div class="modal d-block" style="background: rgba(0,0,0,0.5); z-index: 1050;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-body p-4 text-center">
+                        <i class="bi bi-shield-lock display-4 text-dark mb-3"></i>
+                        <h5 class="fw-bold">Admin Protection</h5>
+                        <p class="text-muted">Are you sure you want to sign in as admin?</p>
+                        <div class="d-flex gap-2 justify-content-center mt-4">
+                            <button class="btn btn-dark px-4" @onclick="ConfirmAdminSignIn">Yes, Continue</button>
+                            <button class="btn btn-light px-4" @onclick="() => showAdminConfirm = false">No</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
     <div class="row mt-5">
         <div class="col-md-6">
@@ -17,7 +56,7 @@
                 <div class="card-body p-4 text-start">
                     <h5 class="card-title fw-bold">Meal Logging</h5>
                     <p class="card-text text-muted">Keep track of every meal and monitor your daily calorie intake.</p>
-                    <a href="meals" class="btn btn-primary">Start Logging</a>
+                    <a href="meals" class="btn btn-primary glow-btn">Start Logging</a>
                 </div>
             </div>
         </div>
@@ -26,9 +65,26 @@
                 <div class="card-body p-4 text-start">
                     <h5 class="card-title fw-bold">Shopping List</h5>
                     <p class="card-text text-muted">Organize your grocery shopping and ensure you never miss an item.</p>
-                    <a href="shoppinglist" class="btn btn-primary">Manage List</a>
+                    <a href="shoppinglist" class="btn btn-primary glow-btn">Manage List</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@code {
+    private bool showAdminConfirm;
+
+    private void ConfirmAdminSignIn()
+    {
+        Session.Login(new computer_project.Web.Models.User { Id = 0, Username = "Admin", Role = "Admin" });
+        showAdminConfirm = false;
+        Navigation.NavigateTo("settings");
+    }
+
+    private void HandleLogout()
+    {
+        Session.Logout();
+        // Stay on home page but re-render
+    }
+}

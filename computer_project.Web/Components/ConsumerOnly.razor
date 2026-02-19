@@ -1,0 +1,24 @@
+@using computer_project.Web.Services
+@inject UserSession Session
+
+@if (Session.IsAdmin)
+{
+    <div class="container py-5 text-center fade-in">
+        <div class="card p-5 border-0 shadow-sm mica-effect mx-auto" style="max-width: 600px;">
+            <i class="bi bi-shield-exclamation display-1 text-warning mb-4"></i>
+            <h2 class="fw-bold">Consumer Access Only</h2>
+            <p class="text-muted lead">This feature is designed for consumers to track their health metrics. Administrators can manage the system from the settings panel.</p>
+            <div class="mt-4">
+                <a href="settings" class="btn btn-primary px-5 btn-lg">User & System Management</a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
